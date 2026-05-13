@@ -46,9 +46,9 @@ def run_network(duration, update=False, drive=0, timestep=1e-2):
         n_iterations,
         DataState(
             state=state))
-    osc_left = np.arange(0, 16, 2)
-    osc_right = np.arange(1, 16, 2)
-    osc_legs = np.arange(16, 32)
+    osc_left = np.arange(0, 16, 2)      # Left oscillators indices
+    osc_right = np.arange(1, 16, 2)     # Right oscillators indices
+    osc_legs = np.arange(16, 32)        # Leg oscillators indices
 
     # Logs
     phases_log = np.zeros([

@@ -77,22 +77,192 @@ class RobotParameters(dict):
         # print("drive: {}".format(self.sim_parameters.drive))
 
     def set_frequencies(self, parameters):
-        """Set frequencies"""
-        pylog.error('Coupling weights must be set')
+        """
+        Set frequencies
+        According to Ijspeert (2007) the frequency is a piece-wise linear function 
+        depending on the drive, with different thresholds for body and limbs
+        """
+        #pylog.error('Coupling weights must be set')
+        d = parameters.drive
+        d_low = 1
+        d_high_body = 5
+        d_high_limbs = 3
+
+        # Parameters from Ijspeert (2007)
+        c1_body = 0.2
+        c0_body = 0.3
+        c1_limbs = 0.2
+        c0_limbs = 0.0
+
+        if d_low <= d <= d_high_body:   
+            v_i_body = c1_body * d + c0_body   
+        else:   
+            v_i_body = 0
+
+        if d_low <= d <= d_high_limbs:   
+            v_i_limbs = c1_limbs * d + c0_limbs  
+        else:   
+            v_i_limbs = 0
+        
+        # NOTE: check if ODEs want frequencies in Hz or rad/s, otherwise multiply by 2pi
+        self.freqs[0:16] = v_i_body
+        self.freqs[16:32] = v_i_limbs
+
 
     def set_coupling_weights(self, parameters):
-        """Set coupling weights"""
-        pylog.error('Coupling weights must be set')
+        """
+        Set coupling weights
+        Populates a 32x32 coupling matrix where each element (i,j) defines 
+        the coupling strength between oscillators i and j
+        """
+        #pylog.error('Coupling weights must be set')
+        # NOTE: updated wrt prof's paper
+        w_body = 10.0
+        w_limb_body = 30.0
+        w_limb = 10.0
+
+        # Body: ipsilateral nearest-neighbor (head↔tail)
+        for k in range(self.n_body_joints - 1):
+            self.coupling_weights[2*k+2, 2*k] = w_body      # left downward
+            self.coupling_weights[2*k, 2*k+2] = w_body      # left upward
+            self.coupling_weights[2*k+3, 2*k+1] = w_body    # right downward
+            self.coupling_weights[2*k+1, 2*k+3] = w_body    # right upward
+
+        # Body: contralateral (left↔right same segment)
+        for k in range(self.n_body_joints):
+            self.coupling_weights[2*k, 2*k+1] = w_body
+            self.coupling_weights[2*k+1, 2*k] = w_body
+
+        # Limb: antagonist pairs within each joint (e.g. 16↔17, 18↔19, ...)
+        for i in range(16, 32, 2):
+            self.coupling_weights[i, i+1] = w_limb
+            self.coupling_weights[i+1, i] = w_limb
+
+        # Limb: girdle↔knee within same limb (for circular motion)
+        for leg in [16, 20, 24, 28]:
+            self.coupling_weights[leg+2, leg] = w_limb
+            self.coupling_weights[leg, leg+2] = w_limb
+            self.coupling_weights[leg+3, leg+1] = w_limb
+            self.coupling_weights[leg+1, leg+3] = w_limb
+
+        # Between limbs: trot pattern
+        # Diagonal pairs in phase (left-fore↔right-hind, right-fore↔left-hind)
+        for a, b in [(16, 28), (20, 24)]:
+            self.coupling_weights[a, b] = w_limb
+            self.coupling_weights[b, a] = w_limb
+        # Contralateral pairs antiphase (left-fore↔right-fore, left-hind↔right-hind)
+        for a, b in [(16, 20), (24, 28)]:
+            self.coupling_weights[a, b] = w_limb
+            self.coupling_weights[b, a] = w_limb
+
+        # Limb→body: only girdle oscillators, unidirectional, strong coupling
+        for limb_osc in [16, 17]:   # left foreleg girdle → segment 0
+            for body_osc in [0, 1]:
+                self.coupling_weights[body_osc, limb_osc] = w_limb_body
+        for limb_osc in [20, 21]:   # right foreleg girdle → segment 1
+            for body_osc in [2, 3]:
+                self.coupling_weights[body_osc, limb_osc] = w_limb_body
+        for limb_osc in [24, 25]:   # left hindleg girdle → segment 6
+            for body_osc in [12, 13]:
+                self.coupling_weights[body_osc, limb_osc] = w_limb_body
+        for limb_osc in [28, 29]:   # right hindleg girdle → segment 7
+            for body_osc in [14, 15]:
+                self.coupling_weights[body_osc, limb_osc] = w_limb_body
+
 
     def set_phase_bias(self, parameters):
-        """Set phase bias"""
-        pylog.error('Phase bias must be set')
+        """
+        Set phase bias
+        These are the desired phase biases between oscillators i and j
+        """
+        #pylog.error('Phase bias must be set')
+        phase_lag = parameters.phase_lag_body if parameters.phase_lag_body is not None else 2*np.pi/8
+        
+        # Body: ipsilateral nearest-neighbor
+        for k in range(self.n_body_joints - 1):
+            self.phase_bias[2*k+2, 2*k] = -phase_lag     # left downward
+            self.phase_bias[2*k, 2*k+2] = phase_lag      # left upward
+            self.phase_bias[2*k+3, 2*k+1] = -phase_lag   # right downward
+            self.phase_bias[2*k+1, 2*k+3] = phase_lag    # right upward
+
+        # Body: contralateral
+        for k in range(self.n_body_joints):
+            self.phase_bias[2*k, 2*k+1] = np.pi
+            self.phase_bias[2*k+1, 2*k] = np.pi
+
+        # Limb: antagonist pairs antiphase
+        for i in range(16, 32, 2):
+            self.phase_bias[i, i+1] = np.pi
+            self.phase_bias[i+1, i] = np.pi
+
+        # Limb: girdle↔knee π/2 offset for circular motion
+        # NOTE: might also try pi/4
+        for leg in [16, 20, 24, 28]:
+            self.phase_bias[leg+2, leg] = np.pi/2
+            self.phase_bias[leg, leg+2] = -np.pi/2
+            self.phase_bias[leg+3, leg+1] = np.pi/2
+            self.phase_bias[leg+1, leg+3] = -np.pi/2
+
+        # Between limbs: trot
+        # NOTE: only connects the "girdle" oscillators for simplicity, might extend to knee oscillators
+        for a, b in [(16, 28), (20, 24)]:   # diagonal: in phase
+            self.phase_bias[a, b] = 0
+            self.phase_bias[b, a] = 0
+        for a, b in [(16, 20), (24, 28)]:   # contralateral: antiphase
+            self.phase_bias[a, b] = np.pi
+            self.phase_bias[b, a] = np.pi
+
+        # Limb→body: only girdle oscillators
+        for limb_osc in [16, 17]:
+            for body_osc in [0, 1]:
+                self.phase_bias[body_osc, limb_osc] = np.pi
+        for limb_osc in [20, 21]:
+            for body_osc in [2, 3]:
+                self.phase_bias[body_osc, limb_osc] = np.pi
+        for limb_osc in [24, 25]:
+            for body_osc in [12, 13]:
+                self.phase_bias[body_osc, limb_osc] = np.pi
+        for limb_osc in [28, 29]:
+            for body_osc in [14, 15]:
+                self.phase_bias[body_osc, limb_osc] = np.pi
+
 
     def set_amplitudes_rate(self, parameters):
-        """Set amplitude rates"""
-        pylog.error('Convergence rates must be set')
+        """
+        Set amplitude rates
+        This parameter defines how fast the amplitude envelope converges
+        Defined as a scalar ai = 20 both for limbs and body  
+        """
+        #pylog.error('Convergence rates must be set')
+        self.rates[:] = 20.0
 
     def set_nominal_amplitudes(self, parameters):
-        """Set nominal amplitudes"""
-        pylog.error('Nominal amplitudes must be set')
+        """
+        Set nominal amplitudes
+        According to Ijspeert (2007) the nominal amplitude is a piece-wise linear function 
+        depending on the drive, with different thresholds for body and limbs
+        """
+        #pylog.error('Nominal amplitudes must be set')
+        d = parameters.drive
+        d_low = 1
+        d_high_body = 5
+        d_high_limbs = 3
+        
+        # Parameters from Ijspeert (2007)
+        c1_body = 0.065
+        c0_body = 0.196
+        c1_limbs = 0.131
+        c0_limbs = 0.131
 
+        if d_low <= d <= d_high_body:   
+            R_i_body = c1_body * d + c0_body   
+        else:   
+            R_i_body = 0
+
+        if d_low <= d <= d_high_limbs:   
+            R_i_limbs = c1_limbs * d + c0_limbs  
+        else:   
+            R_i_limbs = 0
+
+        self.nominal_amplitudes[0:16] = R_i_body
+        self.nominal_amplitudes[16:32] = R_i_limbs
