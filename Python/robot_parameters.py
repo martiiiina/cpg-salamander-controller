@@ -105,8 +105,8 @@ class RobotParameters(dict):
             v_i_limbs = 0
         
         # NOTE: check if ODEs want frequencies in Hz or rad/s, otherwise multiply by 2pi
-        self.freqs[0:16] = v_i_body
-        self.freqs[16:32] = v_i_limbs
+        self.freqs[0:16] = 2*np.pi*v_i_body
+        self.freqs[16:32] = 2*np.pi*v_i_limbs
 
 
     def set_coupling_weights(self, parameters):

@@ -32,6 +32,7 @@ def run_network(duration, update=False, drive=0, timestep=1e-2):
     # Simulation setup
     times = np.arange(0, duration, timestep)
     n_iterations = len(times)
+
     sim_parameters = SimulationParameters(
         drive=drive,
         amplitude_gradient=None,
@@ -46,6 +47,7 @@ def run_network(duration, update=False, drive=0, timestep=1e-2):
         n_iterations,
         DataState(
             state=state))
+    
     osc_left = np.arange(0, 16, 2)      # Left oscillators indices
     osc_right = np.arange(1, 16, 2)     # Right oscillators indices
     osc_legs = np.arange(16, 32)        # Leg oscillators indices
@@ -68,8 +70,8 @@ def run_network(duration, update=False, drive=0, timestep=1e-2):
     freqs_log[0, :] = network.robot_parameters.freqs
 
     # comment below pass to run file
-    pylog.warning('Remove the pass to run your code!!')
-    pass
+    #pylog.warning('Remove the pass to run your code!!')
+    #pass
 
     pylog.warning(
         'Implement plots here, try to plot the various logged data to check the implementation')
@@ -78,7 +80,7 @@ def run_network(duration, update=False, drive=0, timestep=1e-2):
     for i, time0 in enumerate(times[1:]):
         if update:
             network.robot_parameters.update(
-                SimulationParameters(
+                SimulationParameters(drive=drive[i+1]
                 )
             )
         network.step(i, time0, timestep)
@@ -94,7 +96,49 @@ def run_network(duration, update=False, drive=0, timestep=1e-2):
     ))
 
     # Implement plots of network results
-    pylog.warning('Implement plots')
+    #pylog.warning('Implement plots')
+
+    # Compute oscillator outputs x_i = r_i * (1 + cos(phi_i))
+    outputs = amplitudes_log * (1 + np.cos(phases_log))
+
+    fig, axes = plt.subplots(4, 1, figsize=(10, 12), sharex=True)
+
+    # Body oscillator outputs (left side: even indices 0,2,4,...,14)
+    ax = axes[0]
+    for i in osc_left:
+        ax.plot(times, outputs[:, i], label=f'x_{i}')
+    ax.set_ylabel('x Body')
+    ax.set_title('Left body oscillator outputs')
+    ax.legend(loc='upper right', fontsize=7, ncol=4)
+
+    # Limb oscillator outputs
+    ax = axes[1]
+    for i in osc_legs:
+        ax.plot(times, outputs[:, i], label=f'x_{i}')
+    ax.set_ylabel('x Limb')
+    ax.set_title('Limb oscillator outputs')
+    ax.legend(loc='upper right', fontsize=7, ncol=4)
+
+    # Instantaneous frequencies (convert from rad/s to Hz)
+    ax = axes[2]
+    ax.plot(times, freqs_log[:, 0] / (2*np.pi), label='Body', color='black')
+    ax.plot(times, freqs_log[:, 16] / (2*np.pi), label='Limb', color='black', linestyle='--')
+    ax.set_ylabel('Freq [Hz]')
+    ax.set_title('Oscillator frequencies')
+    ax.legend()
+
+    # Drive
+    ax = axes[3]
+    if np.isscalar(drive):
+        ax.plot(times, np.full_like(times, drive), color='black')
+    else:
+        ax.plot(times, drive[:n_iterations], color='black')
+    ax.set_ylabel('drive d')
+    ax.set_xlabel('Time [s]')
+    ax.set_title('Drive signal')
+
+    plt.tight_layout()
+
 
     return
 
@@ -102,7 +146,7 @@ def run_network(duration, update=False, drive=0, timestep=1e-2):
 def exercise_1a_networks(plot, timestep=1e-2):
     """[Project 1] Exercise 1: """
 
-    run_network(duration=5)
+    run_network(duration=10, drive=2)       # NOTE: FIXED DRIVE FOR PART A
 
     # Show plots
     if True:
