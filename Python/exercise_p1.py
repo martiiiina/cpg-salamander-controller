@@ -34,7 +34,7 @@ def run_network(duration, update=False, drive=0, timestep=1e-2):
     n_iterations = len(times)
 
     sim_parameters = SimulationParameters(
-        drive=drive,
+        drive=drive[0] if not np.isscalar(drive) else drive,
         amplitude_gradient=None,
         phase_lag_body=None,
         # Feel free to include parameters
@@ -98,25 +98,25 @@ def run_network(duration, update=False, drive=0, timestep=1e-2):
     # Implement plots of network results
     #pylog.warning('Implement plots')
 
-    # Compute oscillator outputs x_i = r_i * (1 + cos(phi_i))
+    # Compute muscle outputs x_i = r_i * (1 + cos(phi_i))
     outputs = amplitudes_log * (1 + np.cos(phases_log))
 
     fig, axes = plt.subplots(4, 1, figsize=(10, 12), sharex=True)
 
-    # Body oscillator outputs (left side: even indices 0,2,4,...,14)
+    # Body muscle outputs (left side: even indices 0,2,4,...,14)
     ax = axes[0]
     for i in osc_left:
         ax.plot(times, outputs[:, i], label=f'x_{i}')
     ax.set_ylabel('x Body')
-    ax.set_title('Left body oscillator outputs')
+    ax.set_title('Left body muscle outputs')
     ax.legend(loc='upper right', fontsize=7, ncol=4)
 
-    # Limb oscillator outputs
+    # Limb muscle outputs
     ax = axes[1]
     for i in osc_legs:
         ax.plot(times, outputs[:, i], label=f'x_{i}')
     ax.set_ylabel('x Limb')
-    ax.set_title('Limb oscillator outputs')
+    ax.set_title('Limb muscle outputs')
     ax.legend(loc='upper right', fontsize=7, ncol=4)
 
     # Instantaneous frequencies (convert from rad/s to Hz)
@@ -157,6 +157,31 @@ def exercise_1a_networks(plot, timestep=1e-2):
         return
 
 
+def exercise_1b_networks(plot, timestep=1e-2):
+    """Exercise 1b: Drive ramp"""
+
+    duration = 20
+    times = np.arange(0, duration, timestep)
+    n_iterations = len(times)
+    drive = np.linspace(0, 6, n_iterations)
+
+    run_network(
+        duration=duration,
+        drive=drive,
+        update=True,
+        timestep=timestep,
+    )
+
+    # Show plots
+    if True:
+        if plot:
+            plt.show()
+        else:
+            save_figures()
+        return
+
+
 if __name__ == '__main__':
     exercise_1a_networks(plot=not save_plots())
+    exercise_1b_networks(plot=not save_plots())
 
