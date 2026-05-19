@@ -157,16 +157,16 @@ class RobotParameters(dict):
 
         # Limb→body: only girdle oscillators, unidirectional, strong coupling
         for limb_osc in [16, 17]:   # left foreleg girdle → segment 0
-            for body_osc in [0, 1]:
+            for body_osc in [0, 2]:
                 self.coupling_weights[limb_osc, body_osc] = w_limb_body
         for limb_osc in [20, 21]:   # right foreleg girdle → segment 1
-            for body_osc in [2, 3]:
+            for body_osc in [1, 3]:
                 self.coupling_weights[limb_osc, body_osc] = w_limb_body
         for limb_osc in [24, 25]:   # left hindleg girdle → segment 6
-            for body_osc in [12, 13]:
+            for body_osc in [8, 10]:
                 self.coupling_weights[limb_osc, body_osc] = w_limb_body
         for limb_osc in [28, 29]:   # right hindleg girdle → segment 7
-            for body_osc in [14, 15]:
+            for body_osc in [9, 11]:
                 self.coupling_weights[limb_osc, body_osc] = w_limb_body
 
 
@@ -220,10 +220,10 @@ class RobotParameters(dict):
             for body_osc in [1, 3]:
                 self.phase_bias[limb_osc, body_osc] = np.pi
         for limb_osc in [24, 25]:
-            for body_osc in [12, 13]:
+            for body_osc in [8, 10]:
                 self.phase_bias[limb_osc, body_osc] = np.pi
         for limb_osc in [28, 29]:
-            for body_osc in [14, 15]:
+            for body_osc in [9, 11]:
                 self.phase_bias[limb_osc, body_osc] = np.pi
 
 
