@@ -158,16 +158,16 @@ class RobotParameters(dict):
         # Limb→body: only girdle oscillators, unidirectional, strong coupling
         for limb_osc in [16, 17]:   # left foreleg girdle → segment 0
             for body_osc in [0, 1]:
-                self.coupling_weights[body_osc, limb_osc] = w_limb_body
+                self.coupling_weights[limb_osc, body_osc] = w_limb_body
         for limb_osc in [20, 21]:   # right foreleg girdle → segment 1
             for body_osc in [2, 3]:
-                self.coupling_weights[body_osc, limb_osc] = w_limb_body
+                self.coupling_weights[limb_osc, body_osc] = w_limb_body
         for limb_osc in [24, 25]:   # left hindleg girdle → segment 6
             for body_osc in [12, 13]:
-                self.coupling_weights[body_osc, limb_osc] = w_limb_body
+                self.coupling_weights[limb_osc, body_osc] = w_limb_body
         for limb_osc in [28, 29]:   # right hindleg girdle → segment 7
             for body_osc in [14, 15]:
-                self.coupling_weights[body_osc, limb_osc] = w_limb_body
+                self.coupling_weights[limb_osc, body_osc] = w_limb_body
 
 
     def set_phase_bias(self, parameters):
@@ -214,17 +214,17 @@ class RobotParameters(dict):
 
         # Limb→body: only girdle oscillators
         for limb_osc in [16, 17]:
-            for body_osc in [0, 1]:
-                self.phase_bias[body_osc, limb_osc] = np.pi
+            for body_osc in [0, 2]:
+                self.phase_bias[limb_osc, body_osc] = np.pi
         for limb_osc in [20, 21]:
-            for body_osc in [2, 3]:
-                self.phase_bias[body_osc, limb_osc] = np.pi
+            for body_osc in [1, 3]:
+                self.phase_bias[limb_osc, body_osc] = np.pi
         for limb_osc in [24, 25]:
             for body_osc in [12, 13]:
-                self.phase_bias[body_osc, limb_osc] = np.pi
+                self.phase_bias[limb_osc, body_osc] = np.pi
         for limb_osc in [28, 29]:
             for body_osc in [14, 15]:
-                self.phase_bias[body_osc, limb_osc] = np.pi
+                self.phase_bias[limb_osc, body_osc] = np.pi
 
 
     def set_amplitudes_rate(self, parameters):
