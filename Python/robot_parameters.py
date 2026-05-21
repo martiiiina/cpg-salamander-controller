@@ -134,9 +134,11 @@ class RobotParameters(dict):
             self.coupling_weights[2*k+1, 2*k] = w_body
 
         # Limb: antagonist pairs within each joint (e.g. 16↔17, 18↔19, ...)
-        for i in range(16, 32, 2):
-            self.coupling_weights[i, i+1] = w_limb
-            self.coupling_weights[i+1, i] = w_limb
+        for k in [16,20,24,28]:
+            self.coupling_weights[k, k+1] = w_body
+            self.coupling_weights[k+1, k] = w_body
+            self.coupling_weights[k+2, k+3] = w_body
+            self.coupling_weights[k+3, k+2] = w_body
 
         # Limb: girdle↔knee within same limb (for circular motion)
         for leg in [16, 20, 24, 28]:
@@ -146,27 +148,23 @@ class RobotParameters(dict):
             self.coupling_weights[leg+1, leg+3] = w_limb
 
         # Between limbs: trot pattern
-        # Diagonal pairs in phase (left-fore↔right-hind, right-fore↔left-hind)
-        for a, b in [(16, 28), (20, 24)]:
-            self.coupling_weights[a, b] = w_limb
-            self.coupling_weights[b, a] = w_limb
-        # Contralateral pairs antiphase (left-fore↔right-fore, left-hind↔right-hind)
-        for a, b in [(16, 20), (24, 28)]:
+        # Diagonal pairs in phase (left-fore↔right-hind, right-fore↔left-hind), Contralateral pairs antiphase (left-fore↔right-fore, left-hind↔right-hind)
+        for a, b in [(16, 24), (16,20), (24,28), (20,28)]:
             self.coupling_weights[a, b] = w_limb
             self.coupling_weights[b, a] = w_limb
 
         # Limb→body: only girdle oscillators, unidirectional, strong coupling
-        for limb_osc in [16, 17]:   # left foreleg girdle → segment 0
-            for body_osc in [0, 1]:
+        for limb_osc in [16]:   # left foreleg girdle → segment 0
+            for body_osc in [0, 2, 4, 6]:
                 self.coupling_weights[body_osc, limb_osc] = w_limb_body
-        for limb_osc in [20, 21]:   # right foreleg girdle → segment 1
-            for body_osc in [2, 3]:
+        for limb_osc in [20]:   # right foreleg girdle → segment 1
+            for body_osc in [1, 3, 5, 7]:
                 self.coupling_weights[body_osc, limb_osc] = w_limb_body
-        for limb_osc in [24, 25]:   # left hindleg girdle → segment 6
-            for body_osc in [12, 13]:
+        for limb_osc in [24]:   # left hindleg girdle → segment 6
+            for body_osc in [8, 10, 12, 14]:
                 self.coupling_weights[body_osc, limb_osc] = w_limb_body
-        for limb_osc in [28, 29]:   # right hindleg girdle → segment 7
-            for body_osc in [14, 15]:
+        for limb_osc in [28]:   # right hindleg girdle → segment 7
+            for body_osc in [9, 11, 13, 15]:
                 self.coupling_weights[body_osc, limb_osc] = w_limb_body
 
 
@@ -190,40 +188,37 @@ class RobotParameters(dict):
             self.phase_bias[2*k, 2*k+1] = np.pi
             self.phase_bias[2*k+1, 2*k] = np.pi
 
-        # Limb: antagonist pairs antiphase
-        for i in range(16, 32, 2):
-            self.phase_bias[i, i+1] = np.pi
-            self.phase_bias[i+1, i] = np.pi
+        # Limb: antagonist pairs antiphase 
+        for k in [16,20,24,28]:
+            self.phase_bias[k, k+1] = np.pi
+            self.phase_bias[k+1, k] = np.pi
+            self.phase_bias[k+2, k+3] = np.pi
+            self.phase_bias[k+3, k+2] = np.pi
 
         # Limb: girdle↔knee π/2 offset for circular motion
-        # NOTE: might also try pi/4
         for leg in [16, 20, 24, 28]:
-            self.phase_bias[leg+2, leg] = np.pi/2
+            self.phase_bias[leg+2, leg] = -np.pi/2
             self.phase_bias[leg, leg+2] = -np.pi/2
-            self.phase_bias[leg+3, leg+1] = np.pi/2
+            self.phase_bias[leg+3, leg+1] = -np.pi/2
             self.phase_bias[leg+1, leg+3] = -np.pi/2
 
         # Between limbs: trot
-        # NOTE: only connects the "girdle" oscillators for simplicity, might extend to knee oscillators
-        for a, b in [(16, 28), (20, 24)]:   # diagonal: in phase
-            self.phase_bias[a, b] = 0
-            self.phase_bias[b, a] = 0
-        for a, b in [(16, 20), (24, 28)]:   # contralateral: antiphase
-            self.phase_bias[a, b] = np.pi
-            self.phase_bias[b, a] = np.pi
+        for a, b in [(16, 24), (16,20), (24,28), (20,28)]:
+            self.coupling_weights[a, b] = np.pi
+            self.coupling_weights[b, a] = np.pi
 
         # Limb→body: only girdle oscillators
-        for limb_osc in [16, 17]:
-            for body_osc in [0, 1]:
+        for limb_osc in [16]:
+            for body_osc in [0, 2, 4, 6]:
                 self.phase_bias[body_osc, limb_osc] = np.pi
-        for limb_osc in [20, 21]:
-            for body_osc in [2, 3]:
+        for limb_osc in [20]:
+            for body_osc in [1, 3, 5, 7]:
                 self.phase_bias[body_osc, limb_osc] = np.pi
-        for limb_osc in [24, 25]:
-            for body_osc in [12, 13]:
+        for limb_osc in [24]:
+            for body_osc in [8, 10, 12, 14]:
                 self.phase_bias[body_osc, limb_osc] = np.pi
-        for limb_osc in [28, 29]:
-            for body_osc in [14, 15]:
+        for limb_osc in [28]:
+            for body_osc in [9, 11, 13, 15]:
                 self.phase_bias[body_osc, limb_osc] = np.pi
 
 
