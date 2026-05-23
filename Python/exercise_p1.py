@@ -208,6 +208,49 @@ def run_network(duration, update=False, drive=0, timestep=1e-2):
 
     plt.tight_layout()
 
+    # =====================================================================
+# INTER-LIMB TROT PATTERN DIAGNOSTIC
+# =====================================================================
+    theta_20 = phases_log[:, 20]  # RF Girdle
+    theta_24 = phases_log[:, 24]  # LH Girdle  
+    theta_28 = phases_log[:, 28]  # RH Girdle
+
+    # Trot: FL(16) and RH(28) should be in phase → difference ≈ 0
+    # Trot: RF(20) and LH(24) should be in phase → difference ≈ 0
+    # Trot: FL(16) and RF(20) should be antiphase → difference ≈ π
+    # Trot: FL(16) and LH(24) should be antiphase → difference ≈ π
+
+    fl_rh_lag = wrapped_phase_difference(theta_28, theta_16)   # target 0
+    rf_lh_lag = wrapped_phase_difference(theta_24, theta_20)   # target 0
+    fl_rf_lag = wrapped_phase_difference(theta_20, theta_28)   # target π
+    fl_lh_lag = wrapped_phase_difference(theta_24, theta_16)   # target π
+
+    fig_trot, axes_trot = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
+
+    ax = axes_trot[0]
+    ax.plot(times, fl_rh_lag, color='blue',   linewidth=2, label=r'$\theta_{28} - \theta_{16}$ (FL vs RH, target 0)')
+    ax.plot(times, rf_lh_lag, color='green',  linewidth=2, label=r'$\theta_{24} - \theta_{20}$ (RF vs LH, target 0)')
+    ax.axhline(y=0,      color='blue',  linestyle='--', alpha=0.7, label='Target 0')
+    ax.set_ylabel('Phase Lag [rad]')
+    ax.set_ylim([-np.pi, np.pi])
+    ax.set_title('Diagonal Pairs (should be in-phase for trot)')
+    ax.legend(loc='upper right', fontsize=8)
+    ax.grid(True, alpha=0.3)
+
+    ax = axes_trot[1]
+    ax.plot(times, fl_rf_lag, color='red',    linewidth=2, label=r'$\theta_{20} - \theta_{28}$ (FL vs RF, target π)')
+    ax.plot(times, fl_lh_lag, color='orange', linewidth=2, label=r'$\theta_{24} - \theta_{16}$ (FL vs LH, target π)')
+    ax.axhline(y=np.pi,  color='red',   linestyle='--', alpha=0.7, label='Target π')
+    ax.axhline(y=-np.pi, color='red',   linestyle='--', alpha=0.7)
+    ax.set_ylabel('Phase Lag [rad]')
+    ax.set_xlabel('Time [s]')
+    ax.set_ylim([-np.pi, np.pi])
+    ax.set_title('Same-side Pairs (should be antiphase for trot)')
+    ax.legend(loc='upper right', fontsize=8)
+    ax.grid(True, alpha=0.3)
+
+    plt.tight_layout()
+
     return
 
 
