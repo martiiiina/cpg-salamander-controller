@@ -32,10 +32,16 @@ def run_network(duration, update=False, drive=0, timestep=1e-2):
     # Simulation setup
     times = np.arange(0, duration, timestep)
     n_iterations = len(times)
+    
+    # Amplitude gradient from head to tail
+    n_body_joints = 8
+    body_gradient = np.linspace(0.5, 1.0, n_body_joints)
+    limb_gradient = np.ones(8)
+    full_gradient = np.concatenate([body_gradient, limb_gradient])
 
     sim_parameters = SimulationParameters(
         drive=drive[0] if not np.isscalar(drive) else drive,
-        amplitude_gradient=None,
+        amplitude_gradient=full_gradient,
         phase_lag_body=None,
         # Feel free to include parameters
     )
@@ -50,8 +56,9 @@ def run_network(duration, update=False, drive=0, timestep=1e-2):
     
     osc_left = np.arange(0, 16, 2)      # Left oscillators indices
     osc_right = np.arange(1, 16, 2)     # Right oscillators indices
-    osc_legs = np.arange(16, 32)        # Leg oscillators indices
-
+    osc_legs_left = np.concatenate([np.arange(16, 20), np.arange(24, 28)])
+    osc_legs_right = np.concatenate([np.arange(20, 24), np.arange(28, 32)])    
+    
     # Logs
     phases_log = np.zeros([
         n_iterations,
@@ -113,22 +120,37 @@ def run_network(duration, update=False, drive=0, timestep=1e-2):
 
     # Limb muscle outputs
     ax = axes[1]
-    for i in osc_legs:
+    for i in osc_right:
         ax.plot(times, outputs[:, i], label=f'x_{i}')
-    ax.set_ylabel('x Limb')
-    ax.set_title('Limb muscle outputs')
+    ax.set_ylabel('x Body')
+    ax.set_title('Rights body muscle outputs')
     ax.legend(loc='upper right', fontsize=7, ncol=4)
 
     # Instantaneous frequencies (convert from rad/s to Hz)
     ax = axes[2]
+    for i in osc_legs_left:
+        ax.plot(times, outputs[:, i], label=f'x_{i}')
+    ax.set_ylabel('x Limb')
+    ax.set_title('Left limb muscle outputs')
+    ax.legend(loc='upper right', fontsize=7, ncol=4)
+
+    """
     ax.plot(times, freqs_log[:, 0] / (2*np.pi), label='Body', color='black')
     ax.plot(times, freqs_log[:, 16] / (2*np.pi), label='Limb', color='black', linestyle='--')
     ax.set_ylabel('Freq [Hz]')
     ax.set_title('Oscillator frequencies')
-    ax.legend()
 
+    ax.legend()
+    """
     # Drive
     ax = axes[3]
+    for i in osc_legs_right:
+        ax.plot(times, outputs[:, i], label=f'x_{i}')
+    ax.set_ylabel('x Limb')
+    ax.set_title('Right limb muscle outputs')
+    ax.legend(loc='upper right', fontsize=7, ncol=4)
+
+    """
     if np.isscalar(drive):
         ax.plot(times, np.full_like(times, drive), color='black')
     else:
@@ -136,9 +158,55 @@ def run_network(duration, update=False, drive=0, timestep=1e-2):
     ax.set_ylabel('drive d')
     ax.set_xlabel('Time [s]')
     ax.set_title('Drive signal')
+    """
+    plt.tight_layout()
+# =====================================================================
+    # PHASE LAG ANALYSIS DIAGNOSTIC PLOT
+    # =====================================================================
+    # Extract the raw phase arrays for your target oscillators over time
+    theta_16 = phases_log[:, 16]  # LF Girdle Extensor
+    theta_17 = phases_log[:, 17]  # LF Girdle Flexor / Antagonist
+    theta_18 = phases_log[:, 18]  # LF Knee Extensor
+    theta_19 = phases_log[:, 19]  # LF Knee Flexor / Antagonist
+
+    # Calculate wrapped phase differences: Delta_Phi = Wrapped(theta_j - theta_i)
+    def wrapped_phase_difference(theta_j, theta_i):
+        complex_phase_diff = np.exp(1j * (theta_j - theta_i))
+        return np.angle(complex_phase_diff)
+
+    # 1. Intra-limb Girdle-to-Knee Lag (Should converge near -pi/2 or -1.57)
+    girdle_knee_lag = wrapped_phase_difference(theta_18, theta_16)
+
+    # 2. Antagonist Pair Phase Lag (Should converge near pi or 3.14)
+    girdle_antagonist_lag = wrapped_phase_difference(theta_17, theta_16)
+    knee_antagonist_lag = wrapped_phase_difference(theta_19, theta_18)
+
+    # Create diagnostic visualization window
+    fig_diag, axes_diag = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
+
+    # Panel A: Girdle to Knee Spatial Lag Tracking
+    ax = axes_diag[0]
+    ax.plot(times, girdle_knee_lag, color='purple', linewidth=2, label=r'$\theta_{18} - \theta_{16}$ (Knee vs Girdle)')
+    ax.axhline(y=-np.pi/2, color='red', linestyle='--', alpha=0.7, label=r'Target $-\pi/2$')
+    ax.set_ylabel('Phase Lag [rad]')
+    ax.set_ylim([-np.pi, np.pi])
+    ax.set_title('Intra-Limb Spatial Phase Locking Progression')
+    ax.legend(loc='lower right')
+    ax.grid(True, alpha=0.3)
+
+    # Panel B: Antagonist Symmetric Phase Locking
+    ax = axes_diag[1]
+    ax.plot(times, np.abs(girdle_antagonist_lag), color='orange', label=r'$|\theta_{17} - \theta_{16}|$ (Girdle Antagonists)')
+    ax.plot(times, np.abs(knee_antagonist_lag), color='crimson', linestyle=':', label=r'$|\theta_{19} - \theta_{18}|$ (Knee Antagonists)')
+    ax.axhline(y=np.pi, color='green', linestyle='--', alpha=0.7, label=r'Target $\pi$')
+    ax.set_ylabel('Phase Lag [rad]')
+    ax.set_xlabel('Time [s]')
+    ax.set_ylim([0, np.pi + 0.5])
+    ax.set_title('Antagonist Co-Axial Anti-Phase Synchronization')
+    ax.legend(loc='lower right')
+    ax.grid(True, alpha=0.3)
 
     plt.tight_layout()
-
 
     return
 
@@ -146,7 +214,7 @@ def run_network(duration, update=False, drive=0, timestep=1e-2):
 def exercise_1a_networks(plot, timestep=1e-2):
     """[Project 1] Exercise 1: """
 
-    run_network(duration=10, drive=2)       # NOTE: FIXED DRIVE FOR PART A
+    run_network(duration=10, drive=3)       # NOTE: FIXED DRIVE FOR PART A
 
     # Show plots
     if True:

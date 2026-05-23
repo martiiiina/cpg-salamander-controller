@@ -32,6 +32,7 @@ class RobotParameters(dict):
         ])
         self.rates = np.zeros(self.n_oscillators)
         self.nominal_amplitudes = np.zeros(self.n_oscillators)
+        self.amplitude_gradient = parameters.amplitude_gradient if parameters.amplitude_gradient is not None else np.ones(16)
         # self.feedback_gains_swim = np.zeros(self.n_oscillators)
         # self.feedback_gains_walk = np.zeros(self.n_oscillators)
 
@@ -149,7 +150,7 @@ class RobotParameters(dict):
 
         # Between limbs: trot pattern
         # Diagonal pairs in phase (left-fore↔right-hind, right-fore↔left-hind), Contralateral pairs antiphase (left-fore↔right-fore, left-hind↔right-hind)
-        for a, b in [(16, 24), (16,20), (24,28), (20,28)]:
+        for a, b in [(16, 20), (24,28), (20,28), (16,24)]:
             self.coupling_weights[a, b] = w_limb
             self.coupling_weights[b, a] = w_limb
 
@@ -197,29 +198,29 @@ class RobotParameters(dict):
 
         # Limb: girdle↔knee π/2 offset for circular motion
         for leg in [16, 20, 24, 28]:
-            self.phase_bias[leg+2, leg] = -np.pi/2
-            self.phase_bias[leg, leg+2] = -np.pi/2
-            self.phase_bias[leg+3, leg+1] = -np.pi/2
-            self.phase_bias[leg+1, leg+3] = -np.pi/2
+            self.phase_bias[leg+2, leg] = -np.pi / 2
+            self.phase_bias[leg, leg+2] = -np.pi / 2
+            self.phase_bias[leg+3, leg+1] = -np.pi / 2
+            self.phase_bias[leg+1, leg+3] = -np.pi / 2
 
         # Between limbs: trot
-        for a, b in [(16, 24), (16,20), (24,28), (20,28)]:
-            self.coupling_weights[a, b] = np.pi
-            self.coupling_weights[b, a] = np.pi
+        for a, b in [(16, 20), (24,28), (20,28), (16,24)]:
+            self.phase_bias[a, b] = np.pi
+            self.phase_bias[b, a] = np.pi
 
         # Limb→body: only girdle oscillators
         for limb_osc in [16]:
             for body_osc in [0, 2, 4, 6]:
-                self.phase_bias[body_osc, limb_osc] = np.pi
+                self.phase_bias[body_osc, limb_osc] = 0
         for limb_osc in [20]:
             for body_osc in [1, 3, 5, 7]:
-                self.phase_bias[body_osc, limb_osc] = np.pi
+                self.phase_bias[body_osc, limb_osc] = 0
         for limb_osc in [24]:
             for body_osc in [8, 10, 12, 14]:
-                self.phase_bias[body_osc, limb_osc] = np.pi
+                self.phase_bias[body_osc, limb_osc] = 0
         for limb_osc in [28]:
             for body_osc in [9, 11, 13, 15]:
-                self.phase_bias[body_osc, limb_osc] = np.pi
+                self.phase_bias[body_osc, limb_osc] = 0
 
 
     def set_amplitudes_rate(self, parameters):

@@ -65,8 +65,9 @@ def network_ode(_time, state, robot_parameters, loads, contact_sens):
     )
     return np.concatenate([dphases, damplitudes])
 
+# NOTE : modified this to include the alpha parameter
 
-def motor_output(phases, amplitudes, iteration):
+def motor_output(phases, amplitudes, iteration, amplitude_gradient=None):
     """Motor output
 
     Parameters
@@ -82,10 +83,10 @@ def motor_output(phases, amplitudes, iteration):
         Motor outputs for joint in the system.
 
     """
-    output = (
+    output = amplitude_gradient * (
         amplitudes[0:32:2]*(1+np.cos(phases[0:32:2]))
         - amplitudes[1:32:2]*(1+np.cos(phases[1:32:2]))
-    ) if iteration is not None else (
+    ) if iteration is not None else amplitude_gradient * (
         amplitudes[:, 0:32:2]*(1+np.cos(phases[:, 0:32:2]))
         - amplitudes[:, 1:32:2]*(1+np.cos(phases[:, 1:32:2]))
     )
@@ -105,10 +106,17 @@ class SalamandraNetwork(NetworkODE):
         # self.drive_config = None
         # Set initial state
         # Replace your initial oscillator phases here if needed
-        self.state.set_phases(
-            iteration=0,
-            value=1e-4*np.random.rand(self.robot_parameters.n_oscillators),
-        )
+        #self.state.set_phases(
+        #    iteration=0,
+        #    value=1e-4*np.random.rand(self.robot_parameters.n_oscillators),
+        #)
+        if self.robot_parameters.initial_phases is not None:
+            init = self.robot_parameters.initial_phases
+        else:
+            rng = np.random.default_rng(seed=42)
+            init = 1e-4 * rng.random(self.robot_parameters.n_oscillators)
+        self.state.set_phases(iteration=0, value=init)
+
         # Set solver
         self.integrator = 'dopri5'
         self.integrator_kwargs = {}
@@ -145,6 +153,7 @@ class SalamandraNetwork(NetworkODE):
             self.state.phases(iteration=iteration),
             self.state.amplitudes(iteration=iteration),
             iteration=iteration,
+            amplitude_gradient=self.robot_parameters.amplitude_gradient
         )
         return oscillator_output
 

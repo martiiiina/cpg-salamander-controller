@@ -26,15 +26,22 @@ def exercise_walk(timestep):
         record=True,
         record_path='logs/ex2a_walk/video_walking.mp4',
     )
-    return
+# --- LOG ALL JOINT POSITIONS POINT-BY-POINT ---
+    import h5py
 
+    def load_from_hdf5(log_path='./logs/ex2a_walk/sim_0/simulation.hdf5'):
+        with h5py.File(log_path, 'r') as f:
+            # Explore the structure first
+            def print_structure(name, obj):
+                print(name)
+            f.visititems(print_structure)
+
+    return
 
 def exercise_ramp_swim(timestep):
     "[Project 1] Q2 Swimming with an increasing (ramp) drive"
     # Use exercise_example.py for reference
     pass
-    return
-
 
 def exercise_ramp_walk(timestep):
     "[Project 1] Q2 Walking with an increasing (ramp) drive"
