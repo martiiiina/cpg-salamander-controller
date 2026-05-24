@@ -121,6 +121,7 @@ class RobotParameters(dict):
         w_body = 10.0
         w_limb_body = 30.0
         w_limb = 10.0
+        w_intralimb = 10
 
         # Body: ipsilateral nearest-neighbor (head↔tail)
         for k in range(self.n_body_joints - 1):
@@ -143,10 +144,10 @@ class RobotParameters(dict):
 
         # Limb: girdle↔knee within same limb (for circular motion)
         for leg in [16, 20, 24, 28]:
-            self.coupling_weights[leg+2, leg] = w_limb
-            self.coupling_weights[leg, leg+2] = w_limb
-            self.coupling_weights[leg+3, leg+1] = w_limb
-            self.coupling_weights[leg+1, leg+3] = w_limb
+            self.coupling_weights[leg+2, leg] = w_intralimb
+            self.coupling_weights[leg, leg+2] = w_intralimb
+            self.coupling_weights[leg+3, leg+1] = w_intralimb
+            self.coupling_weights[leg+1, leg+3] = w_intralimb
 
         # Between limbs: trot pattern
         # Diagonal pairs in phase (left-fore↔right-hind, right-fore↔left-hind), Contralateral pairs antiphase (left-fore↔right-fore, left-hind↔right-hind)
