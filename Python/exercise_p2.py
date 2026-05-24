@@ -41,7 +41,37 @@ def exercise_walk(timestep):
 def exercise_ramp_swim(timestep):
     "[Project 1] Q2 Swimming with an increasing (ramp) drive"
     # Use exercise_example.py for reference
-    pass
+    duration = 40
+    times = np.arange(0, duration, timestep)
+    drive = np.linspace(1.0, 6.0, len(times))
+    sim_parameters = SimulationParameters(
+        duration=duration,
+        timestep=timestep,
+        spawn_position=[0, 0, 0.1],
+        spawn_orientation=[0, 0, np.pi/2],
+        drive=drive,
+        phase_lag_body=None # your walking phase lag from ex1
+    )
+    os.makedirs('./logs/ex2b/', exist_ok=True)
+    sim, data = simulation(
+        sim_parameters=sim_parameters,
+        arena='water',
+        fast=True,
+        output='logs/ex2b/ramp/sim_water',
+        record=True,
+        record_path='logs/ex2b/ramp/video_ramp_water.mp4',
+    )
+# --- LOG ALL JOINT POSITIONS POINT-BY-POINT ---
+    import h5py
+
+    def load_from_hdf5(log_path='./logs/ex2b/ramp/sim_water/simulation.hdf5'):
+        with h5py.File(log_path, 'r') as f:
+            # Explore the structure first
+            def print_structure(name, obj):
+                print(name)
+            f.visititems(print_structure)
+
+    return
 
 def exercise_ramp_walk(timestep):
     "[Project 1] Q2 Walking with an increasing (ramp) drive"

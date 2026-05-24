@@ -99,6 +99,11 @@ class SalamandraNetwork(NetworkODE):
     def __init__(self, sim_parameters, n_iterations, data):
         super().__init__(data, ode=network_ode)
         self.n_iterations = n_iterations
+        self.sim_parameters = sim_parameters
+        self.drive_ramp = None
+        if not np.isscalar(sim_parameters.drive):
+            self.drive_ramp = np.asarray(sim_parameters.drive, dtype=float)
+            self.sim_parameters.drive = float(self.drive_ramp[0])
         # States
         self.state = data.state
         # Parameters
@@ -135,6 +140,10 @@ class SalamandraNetwork(NetworkODE):
         """Step"""
         if loads is None:
             loads = np.zeros(self.robot_parameters.n_joints)
+        if self.drive_ramp is not None:
+            drive_index = min(iteration + 1, len(self.drive_ramp) - 1)
+            self.sim_parameters.drive = float(self.drive_ramp[drive_index])
+            self.robot_parameters.update(self.sim_parameters)
         if iteration + 1 >= self.n_iterations:
             return
         self.solver.set_f_params(self.robot_parameters, loads, contact_sens)
