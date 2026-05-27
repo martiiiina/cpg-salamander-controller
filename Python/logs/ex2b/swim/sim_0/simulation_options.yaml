@@ -47,14 +47,14 @@ extensions:
 - loader: farms_core.simulation.extensions.ExperimentLogger
   config:
     log_name: simulation.hdf5
-    log_path: logs/ex2a_walk/sim_0
+    log_path: logs/ex2b/swim/sim_0
     skip: 0
 - loader: farms_core.simulation.extensions.ExperimentOptionsLogger
   config:
-    log_path: logs/ex2a_walk/sim_0
+    log_path: logs/ex2b/swim/sim_0
 - loader: farms_mujoco.simulation.extensions.MjcfSaver
   config:
-    path: logs/ex2a_walk/sim_0/simulation_mjcf.xml
+    path: logs/ex2b/swim/sim_0/simulation_mjcf.xml
 - loader: farms_mujoco.simulation.extensions.CameraFollower
   config:
     animat_id: 0
@@ -64,7 +64,7 @@ extensions:
     angular_velocity: 0
 - loader: farms_mujoco.sensors.camera.CameraRecording
   config:
-    path: logs/ex2a_walk/video_walking.mp4
+    path: logs/ex2b/swim/video_swimming.mp4
     animat_id: 0
     fps: 30
     speed: 1.0
@@ -77,5 +77,5 @@ extensions:
     - 0
     - 0
     resolution:
-    - 640
-    - 360
+    - 1280
+    - 720

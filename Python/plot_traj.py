@@ -3,7 +3,9 @@ import matplotlib.pyplot as plt
 import h5py
 
 
-log_path = './logs/ex2a_walk/sim_0/simulation.hdf5'
+# log_path = './logs/ex2a_walk/sim_0/simulation.hdf5'
+# log_path = './logs/ex2b/swim/sim_0/simulation.hdf5'
+log_path = './logs/ex2b/ramp/sim_water/simulation.hdf5'
 
 with h5py.File(log_path, 'r') as f:
     links_array = f['FARMSLISTanimats/0/sensors/links/array'][:]

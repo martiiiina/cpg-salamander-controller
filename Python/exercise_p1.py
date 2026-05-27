@@ -257,7 +257,7 @@ def run_network(duration, update=False, drive=0, timestep=1e-2):
 def exercise_1a_networks(plot, timestep=1e-2):
     """[Project 1] Exercise 1: """
 
-    run_network(duration=10, drive=3)       # NOTE: FIXED DRIVE FOR PART A
+    run_network(duration=10, drive=2)       # NOTE: FIXED DRIVE FOR PART A
 
     # Show plots
     if True:
