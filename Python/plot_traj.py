@@ -74,7 +74,7 @@ ax = axes[0]
 for j in range(8):
     ax.plot(times, joint_angles[:, j], label=f'Spine {j}', alpha=0.85)
 ax.set_ylabel('Angle [rad]')
-ax.set_title('Spine Joints')
+ax.set_title('Spine Joints (fore)')
 ax.legend(loc='upper right', fontsize=7, ncol=4)
 ax.grid(True, alpha=0.3)
 

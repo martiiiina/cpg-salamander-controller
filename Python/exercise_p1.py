@@ -41,7 +41,7 @@ def run_network(duration, update=False, drive=0, timestep=1e-2):
 
     sim_parameters = SimulationParameters(
         drive=drive[0] if not np.isscalar(drive) else drive,
-        amplitude_gradient=full_gradient,
+        amplitude_gradient=None,
         phase_lag_body=None,
         # Feel free to include parameters
     )
@@ -53,12 +53,7 @@ def run_network(duration, update=False, drive=0, timestep=1e-2):
         n_iterations,
         DataState(
             state=state))
-    
-    osc_left = np.arange(0, 16, 2)      # Left oscillators indices
-    osc_right = np.arange(1, 16, 2)     # Right oscillators indices
-    osc_legs_left = np.concatenate([np.arange(16, 20), np.arange(24, 28)])
-    osc_legs_right = np.concatenate([np.arange(20, 24), np.arange(28, 32)])    
-    
+        
     # Logs
     phases_log = np.zeros([
         n_iterations,
@@ -108,156 +103,313 @@ def run_network(duration, update=False, drive=0, timestep=1e-2):
     # Compute muscle outputs x_i = r_i * (1 + cos(phi_i))
     outputs = amplitudes_log * (1 + np.cos(phases_log))
 
-    fig, axes = plt.subplots(4, 1, figsize=(10, 12), sharex=True)
+    def plot_stacked_group(
+        ax,
+        times,
+        outputs,
+        oscs,
+        base_color,
+        label,
+        group_boxes=None,
+        scale_bar=None,
+        transition_times=None,
+    ):
 
-    # Body muscle outputs (left side: even indices 0,2,4,...,14)
-    ax = axes[0]
-    for i in osc_left:
-        ax.plot(times, outputs[:, i], label=f'x_{i}')
-    ax.set_ylabel('x Body')
-    ax.set_title('Left body muscle outputs')
-    ax.legend(loc='upper right', fontsize=7, ncol=4)
+        import matplotlib.colors as mcolors
+        import matplotlib.patches as patches
 
-    # Limb muscle outputs
-    ax = axes[1]
-    for i in osc_right:
-        ax.plot(times, outputs[:, i], label=f'x_{i}')
-    ax.set_ylabel('x Body')
-    ax.set_title('Rights body muscle outputs')
-    ax.legend(loc='upper right', fontsize=7, ncol=4)
+        n = len(oscs)
+        offset = 1.2
 
-    # Instantaneous frequencies (convert from rad/s to Hz)
-    ax = axes[2]
-    for i in osc_legs_left:
-        ax.plot(times, outputs[:, i], label=f'x_{i}')
-    ax.set_ylabel('x Limb')
-    ax.set_title('Left limb muscle outputs')
-    ax.legend(loc='upper right', fontsize=7, ncol=4)
+        rgb = mcolors.to_rgb(base_color)
 
-    """
-    ax.plot(times, freqs_log[:, 0] / (2*np.pi), label='Body', color='black')
-    ax.plot(times, freqs_log[:, 16] / (2*np.pi), label='Limb', color='black', linestyle='--')
-    ax.set_ylabel('Freq [Hz]')
-    ax.set_title('Oscillator frequencies')
+        # Smooth alpha gradient for any number of oscillators
+        alphas = np.linspace(1.0, 0.45, n)
 
-    ax.legend()
-    """
-    # Drive
-    ax = axes[3]
-    for i in osc_legs_right:
-        ax.plot(times, outputs[:, i], label=f'x_{i}')
-    ax.set_ylabel('x Limb')
-    ax.set_title('Right limb muscle outputs')
-    ax.legend(loc='upper right', fontsize=7, ncol=4)
+        # ---------------------------------------------------
+        # Plot stacked traces
+        # ---------------------------------------------------
+        for idx, osc in enumerate(oscs):
 
-    """
+            color = (*rgb, alphas[idx])
+
+            y = outputs[:, osc] + (n - 1 - idx) * offset
+
+            ax.plot(
+                times,
+                y,
+                color=color,
+                linewidth=1.8,
+            )
+
+            # oscillator labels
+            ax.text(
+                times[0] - 0.03,
+                y[0],
+                rf"$x_{osc}$",
+                fontsize=10,
+                va='center',
+                ha='right',
+                color='black',
+            )
+
+        # ---------------------------------------------------
+        # Cosmetics
+        # ---------------------------------------------------
+        ax.set_ylabel("x Body", fontsize=12)
+        ax.set_title(label, fontsize=12, loc='left')
+        ax.set_ylim(-0.5, n * offset + 0.5)
+        ax.set_yticks([])
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+
+        # Trunk / Tail boxes
+        # ---------------------------------------------------
+        if group_boxes is not None:
+            for (osc_subset, text, color_box) in group_boxes:
+
+                # indices of oscillators inside current subplot
+                subset_ids = [oscs.index(o) for o in osc_subset if o in oscs]
+                if len(subset_ids) == 0:
+                    continue
+                # convert stacked indices into y coordinates
+                y_positions = [(n - 1 - idx) * offset for idx in subset_ids]
+                y_min = min(y_positions) - 0.55
+                y_max = max(y_positions) + 0.75
+                # place rectangle just outside plot
+                x_left = times[0] - 0.95
+                width = 0.42
+                rect = patches.Rectangle(
+                    (x_left, y_min),
+                    width,
+                    y_max - y_min,
+                    linewidth=2,
+                    edgecolor=color_box,
+                    facecolor='none',
+                    clip_on=False,
+                    zorder=20,
+                )
+                ax.add_patch(rect)
+                # centered label
+                ax.text(
+                    x_left + width/2,
+                    (y_min + y_max)/2,
+                    text,
+                    rotation=90,
+                    fontsize=12,
+                    ha='center',
+                    va='center',
+                    color=color_box,
+                    fontweight='bold',
+                    zorder=30,
+                )
+        # ---------------------------------------------------
+        # Vertical red transition lines
+        # ---------------------------------------------------
+        if transition_times is not None:
+            for t in transition_times:
+                ax.axvline(
+                    t,
+                    color='red',
+                    linewidth=2,
+                    alpha=0.7,
+                )
+        # ---------------------------------------------------
+        # Scale bar (π/3)
+        # ---------------------------------------------------
+        if scale_bar is not None:
+            scale_val, scale_label = scale_bar
+            x_bar = times[-1] - 0.6
+            y0 = n * offset - 0.8
+            y1 = y0 + scale_val
+            ax.plot(
+                [x_bar, x_bar],
+                [y0, y1],
+                color='black',
+                linewidth=3,
+                solid_capstyle='butt',
+            )
+            ax.text(
+                x_bar + 0.08,
+                (y0 + y1) / 2,
+                scale_label,
+                fontsize=12,
+                va='center',
+            )
+
+    from scipy.signal import find_peaks
+    # Find peaks of top oscillator after transient
     if np.isscalar(drive):
-        ax.plot(times, np.full_like(times, drive), color='black')
+        reference_signal = outputs[:, 0]
+        # Ignore first 3 seconds
+        start_idx = np.searchsorted(times, 3.0)
+        # Find peaks
+        peaks, _ = find_peaks(
+            reference_signal[start_idx:],
+            distance=80,       # avoid nearby peaks
+            prominence=0.05,
+        )
+        # Convert back to global indices
+        peaks = peaks + start_idx
+        # Keep first two peaks
+        transition_times = times[peaks[:1]]
     else:
-        ax.plot(times, drive[:n_iterations], color='black')
-    ax.set_ylabel('drive d')
-    ax.set_xlabel('Time [s]')
-    ax.set_title('Drive signal')
-    """
+        reference_signal = outputs[:, 0]
+        peaks, _ = find_peaks(
+            reference_signal,
+            distance=80,
+            prominence=0.05,
+        )
+        peak_times = times[peaks]
+        peak1_idx = np.where(peak_times > 5.0)[0][0]
+        peak2_idx = np.where(peak_times > 10.0)[0][0]
+        transition_times = [
+            peak_times[peak1_idx],
+            peak_times[peak2_idx],
+        ]
+    # =========================================================
+    # BODY + LIMBS : 2x2 GRID
+    # =========================================================
+    fig, axes = plt.subplots(
+        2,
+        2,
+        figsize=(16, 10),
+        sharex=True,
+    )
+
+    # ---------------------------------------------------------
+    # TOP LEFT : LEFT BODY
+    # ---------------------------------------------------------
+
+    plot_stacked_group(
+        axes[0, 0],
+        times,
+        outputs,
+        [0,2,4,6,8,10,12,14],
+        '#1f6fbf',
+        'Left body',
+        group_boxes=[
+            ([0,2,4,6], 'Trunk', '#1f6fbf'),
+            ([8,10,12,14], 'Tail', '#1a8c4e'),
+        ],
+        transition_times=transition_times,
+        scale_bar=(np.pi/3, r'$\pi/3$'),
+    )
+
+    # ---------------------------------------------------------
+    # TOP RIGHT : RIGHT BODY
+    # ---------------------------------------------------------
+
+    plot_stacked_group(
+        axes[0, 1],
+        times,
+        outputs,
+        [1,3,5,7,9,11,13,15],
+        '#4a90e2',
+        'Right body',
+        group_boxes=[
+            ([1,3,5,7], 'Trunk', '#1f6fbf'),
+            ([9,11,13,15], 'Tail', '#1a8c4e'),
+        ],
+        transition_times=transition_times,
+        scale_bar=(np.pi/3, r'$\pi/3$'),
+    )
+
+    # ---------------------------------------------------------
+    # BOTTOM LEFT : LEFT LIMBS
+    # ---------------------------------------------------------
+
+    plot_stacked_group(
+        axes[1, 0],
+        times,
+        outputs,
+        [16,17,18,19,24,25,26,27],
+        '#d4620a',
+        'Left limbs',
+        group_boxes=[
+            ([16,17,18,19], 'Fore', '#d4620a'),
+            ([24,25,26,27], 'Hind', '#8e44ad'),
+        ],
+        transition_times=transition_times,
+        scale_bar=(np.pi/3, r'$\pi/3$'),
+    )
+
+    # ---------------------------------------------------------
+    # BOTTOM RIGHT : RIGHT LIMBS
+    # ---------------------------------------------------------
+
+    plot_stacked_group(
+        axes[1, 1],
+        times,
+        outputs,
+        [20,21,22,23,28,29,30,31],
+        '#c0392b',
+        'Right limbs',
+        group_boxes=[
+            ([20,21,22,23], 'Fore', '#c0392b'),
+            ([28,29,30,31], 'Hind', '#6c3483'),
+        ],
+        transition_times=transition_times,
+        scale_bar=(np.pi/3, r'$\pi/3$'),
+    )
+
+    # ---------------------------------------------------------
+    # AXIS LABELS
+    # ---------------------------------------------------------
+
+    axes[1,0].set_xlabel('Time [s]', fontsize=12)
+    axes[1,1].set_xlabel('Time [s]', fontsize=12)
+
+    # ---------------------------------------------------------
+    # GLOBAL TITLE
+    # ---------------------------------------------------------
+
+    fig.suptitle(
+        'Salamandra CPG muscle outputs',
+        fontsize=18,
+        fontweight='bold',
+    )
+
+    plt.tight_layout(rect=[0, 0, 1, 0.97])
+    # --- Figure 4: Intra-limb phase diagnostics ---
+    def wpd(a, b): return np.angle(np.exp(1j*(a - b)))
+
+    theta = phases_log
+    fig4, axes4 = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
+    axes4[0].plot(times, wpd(theta[:,18], theta[:,16]), color='purple', label=r'$\theta_{18}-\theta_{16}$ (knee vs girdle)')
+    axes4[0].axhline(-np.pi/2, color='red', linestyle='--', alpha=0.7, label=r'Target $-\pi/2$')
+    axes4[0].set_ylim([-np.pi, np.pi]); axes4[0].set_ylabel('Phase [rad]')
+    axes4[0].set_title('Intra-limb: girdle vs knee'); axes4[0].legend(fontsize=8); axes4[0].grid(alpha=0.2)
+
+    axes4[1].plot(times, np.abs(wpd(theta[:,17], theta[:,16])), color='orange', label=r'$|\theta_{17}-\theta_{16}|$ girdle antagonists')
+    axes4[1].plot(times, np.abs(wpd(theta[:,19], theta[:,18])), color='crimson', linestyle=':', label=r'$|\theta_{19}-\theta_{18}|$ knee antagonists')
+    axes4[1].axhline(np.pi, color='green', linestyle='--', alpha=0.7, label=r'Target $\pi$')
+    axes4[1].set_ylim([0, np.pi+0.3]); axes4[1].set_ylabel('Phase [rad]'); axes4[1].set_xlabel('Time [s]')
+    axes4[1].set_title('Antagonist anti-phase'); axes4[1].legend(fontsize=8); axes4[1].grid(alpha=0.2)
     plt.tight_layout()
-# =====================================================================
-    # PHASE LAG ANALYSIS DIAGNOSTIC PLOT
-    # =====================================================================
-    # Extract the raw phase arrays for your target oscillators over time
-    theta_16 = phases_log[:, 16]  # LF Girdle Extensor
-    theta_17 = phases_log[:, 17]  # LF Girdle Flexor / Antagonist
-    theta_18 = phases_log[:, 18]  # LF Knee Extensor
-    theta_19 = phases_log[:, 19]  # LF Knee Flexor / Antagonist
 
-    # Calculate wrapped phase differences: Delta_Phi = Wrapped(theta_j - theta_i)
-    def wrapped_phase_difference(theta_j, theta_i):
-        complex_phase_diff = np.exp(1j * (theta_j - theta_i))
-        return np.angle(complex_phase_diff)
+    # --- Figure 5: Inter-limb trot diagnostics ---
+    fig5, axes5 = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
+    axes5[0].plot(times, wpd(theta[:,28], theta[:,16]), color='blue',  label=r'$\theta_{28}-\theta_{16}$ FL vs RH (target 0)')
+    axes5[0].plot(times, wpd(theta[:,24], theta[:,20]), color='green', label=r'$\theta_{24}-\theta_{20}$ RF vs LH (target 0)')
+    axes5[0].axhline(0, color='gray', linestyle='--', alpha=0.7)
+    axes5[0].set_ylim([-np.pi, np.pi]); axes5[0].set_ylabel('Phase [rad]')
+    axes5[0].set_title('Diagonal pairs — should be in-phase'); axes5[0].legend(fontsize=8); axes5[0].grid(alpha=0.2)
 
-    # 1. Intra-limb Girdle-to-Knee Lag (Should converge near -pi/2 or -1.57)
-    girdle_knee_lag = wrapped_phase_difference(theta_18, theta_16)
-
-    # 2. Antagonist Pair Phase Lag (Should converge near pi or 3.14)
-    girdle_antagonist_lag = wrapped_phase_difference(theta_17, theta_16)
-    knee_antagonist_lag = wrapped_phase_difference(theta_19, theta_18)
-
-    # Create diagnostic visualization window
-    fig_diag, axes_diag = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
-
-    # Panel A: Girdle to Knee Spatial Lag Tracking
-    ax = axes_diag[0]
-    ax.plot(times, girdle_knee_lag, color='purple', linewidth=2, label=r'$\theta_{18} - \theta_{16}$ (Knee vs Girdle)')
-    ax.axhline(y=-np.pi/2, color='red', linestyle='--', alpha=0.7, label=r'Target $-\pi/2$')
-    ax.set_ylabel('Phase Lag [rad]')
-    ax.set_ylim([-np.pi, np.pi])
-    ax.set_title('Intra-Limb Spatial Phase Locking Progression')
-    ax.legend(loc='lower right')
-    ax.grid(True, alpha=0.3)
-
-    # Panel B: Antagonist Symmetric Phase Locking
-    ax = axes_diag[1]
-    ax.plot(times, np.abs(girdle_antagonist_lag), color='orange', label=r'$|\theta_{17} - \theta_{16}|$ (Girdle Antagonists)')
-    ax.plot(times, np.abs(knee_antagonist_lag), color='crimson', linestyle=':', label=r'$|\theta_{19} - \theta_{18}|$ (Knee Antagonists)')
-    ax.axhline(y=np.pi, color='green', linestyle='--', alpha=0.7, label=r'Target $\pi$')
-    ax.set_ylabel('Phase Lag [rad]')
-    ax.set_xlabel('Time [s]')
-    ax.set_ylim([0, np.pi + 0.5])
-    ax.set_title('Antagonist Co-Axial Anti-Phase Synchronization')
-    ax.legend(loc='lower right')
-    ax.grid(True, alpha=0.3)
-
+    axes5[1].plot(times, wpd(theta[:,20], theta[:,16]), color='red',    label=r'$\theta_{20}-\theta_{16}$ FL vs RF (target $\pi$)')
+    axes5[1].plot(times, wpd(theta[:,24], theta[:,16]), color='orange',  label=r'$\theta_{24}-\theta_{16}$ FL vs LH (target $\pi$)')
+    axes5[1].axhline( np.pi, color='gray', linestyle='--', alpha=0.7)
+    axes5[1].axhline(-np.pi, color='gray', linestyle='--', alpha=0.7)
+    axes5[1].set_ylim([-np.pi, np.pi]); axes5[1].set_ylabel('Phase [rad]'); axes5[1].set_xlabel('Time [s]')
+    axes5[1].set_title('Same-side pairs — should be anti-phase'); axes5[1].legend(fontsize=8); axes5[1].grid(alpha=0.2)
     plt.tight_layout()
-
-    # =====================================================================
-# INTER-LIMB TROT PATTERN DIAGNOSTIC
-# =====================================================================
-    theta_20 = phases_log[:, 20]  # RF Girdle
-    theta_24 = phases_log[:, 24]  # LH Girdle  
-    theta_28 = phases_log[:, 28]  # RH Girdle
-
-    # Trot: FL(16) and RH(28) should be in phase → difference ≈ 0
-    # Trot: RF(20) and LH(24) should be in phase → difference ≈ 0
-    # Trot: FL(16) and RF(20) should be antiphase → difference ≈ π
-    # Trot: FL(16) and LH(24) should be antiphase → difference ≈ π
-
-    fl_rh_lag = wrapped_phase_difference(theta_28, theta_16)   # target 0
-    rf_lh_lag = wrapped_phase_difference(theta_24, theta_20)   # target 0
-    fl_rf_lag = wrapped_phase_difference(theta_20, theta_28)   # target π
-    fl_lh_lag = wrapped_phase_difference(theta_24, theta_16)   # target π
-
-    fig_trot, axes_trot = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
-
-    ax = axes_trot[0]
-    ax.plot(times, fl_rh_lag, color='blue',   linewidth=2, label=r'$\theta_{28} - \theta_{16}$ (FL vs RH, target 0)')
-    ax.plot(times, rf_lh_lag, color='green',  linewidth=2, label=r'$\theta_{24} - \theta_{20}$ (RF vs LH, target 0)')
-    ax.axhline(y=0,      color='blue',  linestyle='--', alpha=0.7, label='Target 0')
-    ax.set_ylabel('Phase Lag [rad]')
-    ax.set_ylim([-np.pi, np.pi])
-    ax.set_title('Diagonal Pairs (should be in-phase for trot)')
-    ax.legend(loc='upper right', fontsize=8)
-    ax.grid(True, alpha=0.3)
-
-    ax = axes_trot[1]
-    ax.plot(times, fl_rf_lag, color='red',    linewidth=2, label=r'$\theta_{20} - \theta_{28}$ (FL vs RF, target π)')
-    ax.plot(times, fl_lh_lag, color='orange', linewidth=2, label=r'$\theta_{24} - \theta_{16}$ (FL vs LH, target π)')
-    ax.axhline(y=np.pi,  color='red',   linestyle='--', alpha=0.7, label='Target π')
-    ax.axhline(y=-np.pi, color='red',   linestyle='--', alpha=0.7)
-    ax.set_ylabel('Phase Lag [rad]')
-    ax.set_xlabel('Time [s]')
-    ax.set_ylim([-np.pi, np.pi])
-    ax.set_title('Same-side Pairs (should be antiphase for trot)')
-    ax.legend(loc='upper right', fontsize=8)
-    ax.grid(True, alpha=0.3)
-
-    plt.tight_layout()
-
     return
 
 
 def exercise_1a_networks(plot, timestep=1e-2):
     """[Project 1] Exercise 1: """
 
-    run_network(duration=10, drive=3)       # NOTE: FIXED DRIVE FOR PART A
+    run_network(duration=10, drive=2)       # NOTE: FIXED DRIVE FOR PART A
 
     # Show plots
     if True:

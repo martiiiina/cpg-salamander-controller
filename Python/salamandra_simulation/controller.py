@@ -50,9 +50,22 @@ class SalamandraController(AmphibiousController):
 
         # Limb offsets
         joints_offsets_index = 4*16+8
+        d = self.network.robot_parameters.sim_parameters.drive
+
+        if np.asarray(d).flat[0] > 3.0:
+            # Swimming: fold limbs back
+            self.animat_data.state.array[index, joints_offsets_index::2] = -0.5*np.pi      # forelimbs back ✓
+            self.animat_data.state.array[index, joints_offsets_index+4::2] = -0.5*np.pi    # hindlimbs: flip sign
+        else:
+            # Walking
+            self.animat_data.state.array[index, joints_offsets_index+1::2] = 0.2*np.pi
+            self.animat_data.state.array[index, joints_offsets_index+4+1::2] = 0.3*np.pi
+
+        """
         # Forelimbs joints
         self.animat_data.state.array[index,
                                      joints_offsets_index+1::2] = 0.2*np.pi
         # Hindlimbs joints
         self.animat_data.state.array[index,
                                      joints_offsets_index+4+1::2] = 0.3*np.pi
+        """

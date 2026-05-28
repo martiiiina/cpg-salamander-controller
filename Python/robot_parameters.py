@@ -12,6 +12,8 @@ class RobotParameters(dict):
 
     def __init__(self, parameters):
         super().__init__()
+        self.sim_parameters = parameters  # ← add this as the very first line
+
 
         # Initialise parameters
         self.n_body_joints = parameters.n_body_joints
@@ -76,6 +78,11 @@ class RobotParameters(dict):
         # self.set_nominal_amplitudes(self.sim_parameters)  # R_i
         # print("GPGS: {}".format(gps[4, 0]))
         # print("drive: {}".format(self.sim_parameters.drive))
+        if hasattr(self.sim_parameters, 'drive_ramp'):
+                self.sim_parameters.drive = self.sim_parameters.drive_ramp[iteration]
+                self.set_frequencies(self.sim_parameters)
+                self.set_nominal_amplitudes(self.sim_parameters)
+
 
     def set_frequencies(self, parameters):
         """
@@ -95,12 +102,12 @@ class RobotParameters(dict):
         c1_limbs = 0.2
         c0_limbs = 0.0
 
-        if d_low <= d <= d_high_body:   
+        if (d_low <= d) & (d <= d_high_body):   
             v_i_body = c1_body * d + c0_body   
         else:   
             v_i_body = 0
 
-        if d_low <= d <= d_high_limbs:   
+        if (d_low <= d) & (d <= d_high_limbs):   
             v_i_limbs = c1_limbs * d + c0_limbs  
         else:   
             v_i_limbs = 0
@@ -108,6 +115,9 @@ class RobotParameters(dict):
         # NOTE: check if ODEs want frequencies in Hz or rad/s, otherwise multiply by 2pi
         self.freqs[0:16] = 2*np.pi*v_i_body
         self.freqs[16:32] = 2*np.pi*v_i_limbs
+        
+        # self.freqs[0:2] = self.freqs[0:2] * (1 + 0.2)
+        # self.freqs[16:24] = self.freqs[16:24] * (1 + 0.1)
 
 
     def set_coupling_weights(self, parameters):
@@ -121,6 +131,7 @@ class RobotParameters(dict):
         w_body = 10.0
         w_limb_body = 30.0
         w_limb = 10.0
+        w_intralimb = 5
 
         # Body: ipsilateral nearest-neighbor (head↔tail)
         for k in range(self.n_body_joints - 1):
@@ -143,10 +154,10 @@ class RobotParameters(dict):
 
         # Limb: girdle↔knee within same limb (for circular motion)
         for leg in [16, 20, 24, 28]:
-            self.coupling_weights[leg+2, leg] = w_limb
-            self.coupling_weights[leg, leg+2] = w_limb
-            self.coupling_weights[leg+3, leg+1] = w_limb
-            self.coupling_weights[leg+1, leg+3] = w_limb
+            self.coupling_weights[leg+2, leg] = w_intralimb
+            self.coupling_weights[leg, leg+2] = w_intralimb
+            self.coupling_weights[leg+3, leg+1] = w_intralimb
+            self.coupling_weights[leg+1, leg+3] = w_intralimb
 
         # Between limbs: trot pattern
         # Diagonal pairs in phase (left-fore↔right-hind, right-fore↔left-hind), Contralateral pairs antiphase (left-fore↔right-fore, left-hind↔right-hind)
@@ -156,17 +167,30 @@ class RobotParameters(dict):
 
         # Limb→body: only girdle oscillators, unidirectional, strong coupling
         for limb_osc in [16]:   # left foreleg girdle → segment 0
-            for body_osc in [0, 2, 4, 6]:
-                self.coupling_weights[body_osc, limb_osc] = w_limb_body
+            for body_osc in [0, 2, 4, 6, 8]:
+                self.coupling_weights[limb_osc, body_osc] = w_limb_body
         for limb_osc in [20]:   # right foreleg girdle → segment 1
-            for body_osc in [1, 3, 5, 7]:
-                self.coupling_weights[body_osc, limb_osc] = w_limb_body
+            for body_osc in [1, 3, 5, 7, 9]:
+                self.coupling_weights[limb_osc, body_osc] = w_limb_body
         for limb_osc in [24]:   # left hindleg girdle → segment 6
-            for body_osc in [8, 10, 12, 14]:
-                self.coupling_weights[body_osc, limb_osc] = w_limb_body
+            for body_osc in [ 10, 12, 14]:
+                self.coupling_weights[limb_osc, body_osc] = w_limb_body
         for limb_osc in [28]:   # right hindleg girdle → segment 7
-            for body_osc in [9, 11, 13, 15]:
-                self.coupling_weights[body_osc, limb_osc] = w_limb_body
+            for body_osc in [ 11, 13, 15]:
+                self.coupling_weights[limb_osc, body_osc] = w_limb_body
+                
+        # for limb_osc in [17]:   # left foreleg girdle → segment 0
+        #     for body_osc in [ 2, 4, 6, 8]:
+        #         self.coupling_weights[body_osc, limb_osc] = -w_limb_body
+        # for limb_osc in [21]:   # right foreleg girdle → segment 1
+        #     for body_osc in [ 3, 5, 7, 9]:
+        #         self.coupling_weights[body_osc, limb_osc] = -w_limb_body
+        # for limb_osc in [25]:   # left hindleg girdle → segment 6
+        #     for body_osc in [ 10, 12, 14]:
+        #         self.coupling_weights[body_osc, limb_osc] = -w_limb_body
+        # for limb_osc in [29]:   # right hindleg girdle → segment 7
+        #     for body_osc in [ 11, 13, 15]:
+        #         self.coupling_weights[body_osc, limb_osc] = -w_limb_body
 
 
     def set_phase_bias(self, parameters):
@@ -179,10 +203,10 @@ class RobotParameters(dict):
         
         # Body: ipsilateral nearest-neighbor
         for k in range(self.n_body_joints - 1):
-            self.phase_bias[2*k+2, 2*k] = -phase_lag     # left downward
-            self.phase_bias[2*k, 2*k+2] = phase_lag      # left upward
-            self.phase_bias[2*k+3, 2*k+1] = -phase_lag   # right downward
-            self.phase_bias[2*k+1, 2*k+3] = phase_lag    # right upward
+            self.phase_bias[2*k+2, 2*k] = phase_lag     # left downward
+            self.phase_bias[2*k, 2*k+2] = -phase_lag      # left dow
+            self.phase_bias[2*k+3, 2*k+1] = phase_lag   # right downward
+            self.phase_bias[2*k+1, 2*k+3] = -phase_lag    # right upward
 
         # Body: contralateral
         for k in range(self.n_body_joints):
@@ -205,22 +229,22 @@ class RobotParameters(dict):
 
         # Between limbs: trot
         for a, b in [(16, 20), (24,28), (20,28), (16,24)]:
-            self.phase_bias[a, b] = np.pi
-            self.phase_bias[b, a] = np.pi
+            self.phase_bias[a, b] = -np.pi
+            self.phase_bias[b, a] = -np.pi
 
         # Limb→body: only girdle oscillators
         for limb_osc in [16]:
-            for body_osc in [0, 2, 4, 6]:
-                self.phase_bias[body_osc, limb_osc] = 0
+            for body_osc in [0, 2, 4, 6, 8]:
+                self.phase_bias[limb_osc, body_osc] = 0
         for limb_osc in [20]:
-            for body_osc in [1, 3, 5, 7]:
-                self.phase_bias[body_osc, limb_osc] = 0
+            for body_osc in [1, 3, 5, 7, 9]:
+                self.phase_bias[limb_osc, body_osc] = 0
         for limb_osc in [24]:
-            for body_osc in [8, 10, 12, 14]:
-                self.phase_bias[body_osc, limb_osc] = 0
+            for body_osc in [ 10, 12, 14]:
+                self.phase_bias[limb_osc, body_osc] = 0
         for limb_osc in [28]:
-            for body_osc in [9, 11, 13, 15]:
-                self.phase_bias[body_osc, limb_osc] = 0
+            for body_osc in [ 11, 13, 15]:
+                self.phase_bias[limb_osc, body_osc] = 0
 
 
     def set_amplitudes_rate(self, parameters):
@@ -244,21 +268,22 @@ class RobotParameters(dict):
         d_high_body = 5
         d_high_limbs = 3
         
-        # Parameters from Ijspeert (2007)
-        c1_body = 0.065
-        c0_body = 0.196
-        c1_limbs = 0.131
-        c0_limbs = 0.131
+        # Parameters from Ijspeert (2007) 
+        c1_body = 0.2
+        c0_body = 0.8
+        c1_limbs = 0.15
+        c0_limbs = 0.25
 
-        if d_low <= d <= d_high_body:   
+        if (d_low <= d) & (d <= d_high_body):   
             R_i_body = c1_body * d + c0_body   
         else:   
             R_i_body = 0
 
-        if d_low <= d <= d_high_limbs:   
+        if (d_low <= d) & (d <= d_high_limbs):   
             R_i_limbs = c1_limbs * d + c0_limbs  
         else:   
             R_i_limbs = 0
 
         self.nominal_amplitudes[0:16] = R_i_body
         self.nominal_amplitudes[16:32] = R_i_limbs
+

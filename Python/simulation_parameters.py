@@ -11,8 +11,8 @@ class SimulationParameters:
         self.n_legs_joints = 8
         self.duration = 30
         self.initial_phases = None
-        # self.position_body_gain = 0.6  # default do not change
-        # self.position_limb_gain = 1  # default do not change
+        self.position_body_gain = 0.6  # default do not change
+        self.position_limb_gain = 1  # default do not change
         self.phase_lag_body = None
         self.amplitude_gradient = None
         # Feel free to add more parameters (ex: MLR drive)
