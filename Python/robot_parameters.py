@@ -267,12 +267,11 @@ class RobotParameters(dict):
         d_low = 1
         d_high_body = 5
         d_high_limbs = 3
-        
-        # Parameters from Ijspeert (2007) 
-        c1_body = 0.2
+
+        c1_body = 0.15
         c0_body = 0.8
         c1_limbs = 0.15
-        c0_limbs = 0.25
+        c0_limbs = 0.13
 
         if (d_low <= d) & (d <= d_high_body):   
             R_i_body = c1_body * d + c0_body   

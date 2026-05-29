@@ -2,39 +2,23 @@ import numpy as np
 import matplotlib.pyplot as plt 
 import h5py
 
-
+# Load log path
 log_path = './logs/ex2a_walk/sim_0/simulation.hdf5'
-
 with h5py.File(log_path, 'r') as f:
     links_array = f['FARMSLISTanimats/0/sensors/links/array'][:]
     joints_array = f['FARMSLISTanimats/0/sensors/joints/array'][:]
     times = f['times'][:]
 
-# Figure out which columns are position
-# Print first timestep of link 0 to see what the 20 values represent
-print("Link 0 at t=0:", links_array[0, 0, :])
-print("Link 0 at t=end:", links_array[-1, 0, :])
-# Position is typically columns 0:3 = [x, y, z]
-# link_body_04 is index 4, link_body_05 is index 17 (reordered in HDF5)
-# Use index 4 as body center
-
+"""
+ Position is typically columns 0:3 = [x, y, z]
+ link_body_04 is index 4, link_body_05 is index 17 (reordered in HDF5)
+ Use index 4 as body center
+"""
 positions = links_array[:, 4, :3]   # shape [3000, 3]
 forward = positions[:, 1]            # Y = forward (spawn at pi/2)
 lateral = positions[:, 0]            # X = lateral
 
-# Joint positions — column 0 is the angle
-# Joint mapping from names:
-# 0-7: spine joints (body_00 to body_08, skipping passive)
-# 8:  joint_leg_0_L_0  = FL girdle
-# 9:  joint_leg_0_L_1  = FL knee
-# 10: joint_leg_0_R_0  = FR girdle
-# 11: joint_leg_0_R_1  = FR knee
-# 12: joint_leg_1_L_0  = HL girdle
-# 13: joint_leg_1_L_1  = HL knee
-# 14: joint_leg_1_R_0  = HR girdle
-# 15: joint_leg_1_R_1  = HR knee
-joint_angles = joints_array[:, :, 0]   # shape [3000, 18]
-
+# Plot trajectory and extract velocity
 fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
 ax = axes[0]
@@ -60,14 +44,29 @@ ax.grid(True, alpha=0.3)
 fwd = forward[-1] - forward[0]
 lat = lateral[-1] - lateral[0]
 dur = times[-1] - times[0]
+
 print(f"Forward displacement: {fwd:.4f} m")
 print(f"Lateral drift:        {lat:.4f} m")
-print(f"Average forward speed:{fwd/dur:.4f} m/s")
+print(f"Average forward speed: {fwd/dur:.4f} m/s")
+print(f"Average lateral speed: {lat/dur:.4f} m/s")
 
 plt.tight_layout()
 plt.show()
 
-# --- Joint angles plot ---
+# Joint positions — column 0 is the angle
+# Joint mapping from names:
+# 0-7: spine joints (body_00 to body_08, skipping passive)
+# 8:  joint_leg_0_L_0  = FL girdle
+# 9:  joint_leg_0_L_1  = FL knee
+# 10: joint_leg_0_R_0  = FR girdle
+# 11: joint_leg_0_R_1  = FR knee
+# 12: joint_leg_1_L_0  = HL girdle
+# 13: joint_leg_1_L_1  = HL knee
+# 14: joint_leg_1_R_0  = HR girdle
+# 15: joint_leg_1_R_1  = HR knee
+joint_angles = joints_array[:, :, 0]   # shape [3000, 18]
+
+# Joint angles plot 
 fig, axes = plt.subplots(3, 1, figsize=(12, 12), sharex=True)
 
 ax = axes[0]

@@ -15,7 +15,7 @@ def exercise_walk(timestep):
         timestep=timestep,
         spawn_position=[0, 0, 0.1],
         spawn_orientation=[0, 0, np.pi/2],
-        drive=3,          # fixed drive in walking regime
+        drive=2.5,          # fixed drive in walking regime
         phase_lag_body=None # your walking phase lag from ex1
     )
     os.makedirs('./logs/ex2a_walk/', exist_ok=True)
@@ -27,15 +27,6 @@ def exercise_walk(timestep):
         record=True,
         record_path='logs/ex2a_walk/video_walking.mp4',
     )
-    # --- LOG ALL JOINT POSITIONS POINT-BY-POINT ---
-    import h5py
-
-    def load_from_hdf5(log_path='./logs/ex2a_walk/sim_0/simulation.hdf5'):
-        with h5py.File(log_path, 'r') as f:
-            # Explore the structure first
-            def print_structure(name, obj):
-                print(name)
-            f.visititems(print_structure)
     return
 
 def exercise_ramp_swim(timestep):
@@ -51,24 +42,17 @@ def exercise_ramp_swim(timestep):
         drive=0.0,      # Inital value                                    
         phase_lag_body=None
     )
-    sim_parameters.drive_ramp = np.linspace(0, 6, n_steps)  # ← ramp stored here    
+    sim_parameters.drive_ramp = np.linspace(0, 6, n_steps)  # Ramp as a new parameter   
     os.makedirs('./logs/ex2b_swim/', exist_ok=True)
     sim, data = simulation(
         sim_parameters=sim_parameters,
         arena='water',
         fast=True,
         output='logs/ex2b_swim/sim_0',
-        #record=True,
-        #record_path='logs/ex2b_swim/video_swimming.mp4',
-        #record_fps=15,              # halves memory
+        record=True,
+        record_path='logs/ex2b_swim/video_swimming.mp4',
+        record_fps=15,              # halves memory
     )
-
-    def load_from_hdf5(log_path='./logs/ex2b_swim/sim_0/simulation.hdf5'):
-        with h5py.File(log_path, 'r') as f:
-            # Explore the structure first
-            def print_structure(name, obj):
-                print(name)
-            f.visititems(print_structure)
     return
 
 
@@ -81,26 +65,20 @@ def exercise_ramp_walk(timestep):
         timestep=timestep,
         spawn_position=[0, 0, 0.1],
         spawn_orientation=[0, 0, np.pi/2],
-        drive=0,          # fixed drive in walking regime
-        phase_lag_body=None, # your walking phase lag from ex1
+        drive=0,          
+        phase_lag_body=None, 
     )
-    sim_parameters.drive_ramp = np.linspace(0, 6, n_steps)  # ← ramp stored here    
+    sim_parameters.drive_ramp = np.linspace(0, 6, n_steps)  
     os.makedirs('./logs/ex2b_walk/', exist_ok=True)
     sim, data = simulation(
         sim_parameters=sim_parameters,
         arena='land',
         fast=True,
         output='logs/ex2b_walk/sim_0',
-        #record=True,
-        #record_path='logs/ex2b_walk/video_walk.mp4',
-        #record_fps=15,              # halves memory
+        record=True,
+        record_path='logs/ex2b_walk/video_walk.mp4',
+        record_fps=15,              # halves memory
     )
-    def load_from_hdf5(log_path='./logs/ex2b_swim/sim_0/simulation.hdf5'):
-        with h5py.File(log_path, 'r') as f:
-            # Explore the structure first
-            def print_structure(name, obj):
-                print(name)
-            f.visititems(print_structure)
     return
 
 
