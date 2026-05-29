@@ -78,8 +78,47 @@ class RobotParameters(dict):
         # self.set_nominal_amplitudes(self.sim_parameters)  # R_i
         # print("GPGS: {}".format(gps[4, 0]))
         # print("drive: {}".format(self.sim_parameters.drive))
+        """
         if hasattr(self.sim_parameters, 'drive_ramp'):
                 self.sim_parameters.drive = self.sim_parameters.drive_ramp[iteration]
+                self.set_frequencies(self.sim_parameters)
+                self.set_nominal_amplitudes(self.sim_parameters)
+        """
+
+        """
+        The simulator computes collision/contact forces between the robot and the environment.
+        contact_all --> gets all contact force vectors and converts each vector into a single magnitude
+        """
+        index = 0 if iteration == 0 else (iteration - 1)
+        contacts_all = np.linalg.norm(
+        np.array(
+            salamandra_data.sensors.contacts.totals()[index]
+        ),
+        axis=1
+        )
+        contacts_body = contacts_all[:9]
+        contacts_upper_limbs = contacts_all[9:17:2]
+        contacts_feet = contacts_all[10:18:2]
+        if iteration % 50 == 0:
+            print(
+                f"iter={iteration}, "
+                f"feet={contacts_feet}, "
+                f"upper={contacts_upper_limbs}",
+                f"body={contacts_body}",
+                f"drive={self.sim_parameters.drive}",
+                flush=True
+            )
+            if self.sim_parameters.update_drive:
+                # Transition criteria
+                n_contacts = np.sum(contacts_feet > 0.0)
+                # LAND → WALK
+                if n_contacts > 0:
+                    self.sim_parameters.drive = 2.5
+                # WATER → SWIM
+                else:
+                    self.sim_parameters.drive = 4.0
+
+                # Update oscillator parameters
                 self.set_frequencies(self.sim_parameters)
                 self.set_nominal_amplitudes(self.sim_parameters)
 
@@ -129,7 +168,7 @@ class RobotParameters(dict):
         #pylog.error('Coupling weights must be set')
         # NOTE: updated wrt prof's paper
         w_body = 10.0
-        w_limb_body = 30.0
+        w_limb_body = parameters.w_limb_body
         w_limb = 10.0
         w_intralimb = 5
 
@@ -173,26 +212,12 @@ class RobotParameters(dict):
             for body_osc in [1, 3, 5, 7, 9]:
                 self.coupling_weights[limb_osc, body_osc] = w_limb_body
         for limb_osc in [24]:   # left hindleg girdle → segment 6
-            for body_osc in [ 10, 12, 14]:
+            for body_osc in [10, 12, 14]:
                 self.coupling_weights[limb_osc, body_osc] = w_limb_body
         for limb_osc in [28]:   # right hindleg girdle → segment 7
-            for body_osc in [ 11, 13, 15]:
+            for body_osc in [11, 13, 15]:
                 self.coupling_weights[limb_osc, body_osc] = w_limb_body
                 
-        # for limb_osc in [17]:   # left foreleg girdle → segment 0
-        #     for body_osc in [ 2, 4, 6, 8]:
-        #         self.coupling_weights[body_osc, limb_osc] = -w_limb_body
-        # for limb_osc in [21]:   # right foreleg girdle → segment 1
-        #     for body_osc in [ 3, 5, 7, 9]:
-        #         self.coupling_weights[body_osc, limb_osc] = -w_limb_body
-        # for limb_osc in [25]:   # left hindleg girdle → segment 6
-        #     for body_osc in [ 10, 12, 14]:
-        #         self.coupling_weights[body_osc, limb_osc] = -w_limb_body
-        # for limb_osc in [29]:   # right hindleg girdle → segment 7
-        #     for body_osc in [ 11, 13, 15]:
-        #         self.coupling_weights[body_osc, limb_osc] = -w_limb_body
-
-
     def set_phase_bias(self, parameters):
         """
         Set phase bias
@@ -200,6 +225,7 @@ class RobotParameters(dict):
         """
         #pylog.error('Phase bias must be set')
         phase_lag = parameters.phase_lag_body if parameters.phase_lag_body is not None else 2*np.pi/8
+        lb_phase_lag = parameters.limb_body_phase_offset
         
         # Body: ipsilateral nearest-neighbor
         for k in range(self.n_body_joints - 1):
@@ -235,16 +261,16 @@ class RobotParameters(dict):
         # Limb→body: only girdle oscillators
         for limb_osc in [16]:
             for body_osc in [0, 2, 4, 6, 8]:
-                self.phase_bias[limb_osc, body_osc] = 0
+                self.phase_bias[limb_osc, body_osc] = lb_phase_lag
         for limb_osc in [20]:
             for body_osc in [1, 3, 5, 7, 9]:
-                self.phase_bias[limb_osc, body_osc] = 0
+                self.phase_bias[limb_osc, body_osc] = lb_phase_lag
         for limb_osc in [24]:
             for body_osc in [ 10, 12, 14]:
-                self.phase_bias[limb_osc, body_osc] = 0
+                self.phase_bias[limb_osc, body_osc] = lb_phase_lag
         for limb_osc in [28]:
             for body_osc in [ 11, 13, 15]:
-                self.phase_bias[limb_osc, body_osc] = 0
+                self.phase_bias[limb_osc, body_osc] = lb_phase_lag
 
 
     def set_amplitudes_rate(self, parameters):
@@ -268,18 +294,21 @@ class RobotParameters(dict):
         d_high_body = 5
         d_high_limbs = 3
 
-        c1_body = 0.15
+        c1_body = 0.15/2
         c0_body = 0.8
         c1_limbs = 0.15
         c0_limbs = 0.13
 
+        limb_gain_factor = parameters.limb_gain
+        axial_gain_factor = parameters.body_gain
+
         if (d_low <= d) & (d <= d_high_body):   
-            R_i_body = c1_body * d + c0_body   
+            R_i_body = (c1_body * d + c0_body) * axial_gain_factor   
         else:   
             R_i_body = 0
 
         if (d_low <= d) & (d <= d_high_limbs):   
-            R_i_limbs = c1_limbs * d + c0_limbs  
+            R_i_limbs = (c1_limbs * d + c0_limbs) * limb_gain_factor  
         else:   
             R_i_limbs = 0
 

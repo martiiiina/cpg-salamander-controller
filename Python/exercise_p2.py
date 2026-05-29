@@ -16,7 +16,11 @@ def exercise_walk(timestep):
         spawn_position=[0, 0, 0.1],
         spawn_orientation=[0, 0, np.pi/2],
         drive=2.5,          # fixed drive in walking regime
-        phase_lag_body=None # your walking phase lag from ex1
+        phase_lag_body=None, # your walking phase lag from ex1
+        w_limb_body=150,
+        limb_body_phase_offset=np.pi/4,
+        body_gain=1,
+        limb_gain=1
     )
     os.makedirs('./logs/ex2a_walk/', exist_ok=True)
     sim, data = simulation(
@@ -40,7 +44,11 @@ def exercise_ramp_swim(timestep):
         spawn_position=[0, 0, 0.1],
         spawn_orientation=[0, 0, np.pi/2],
         drive=0.0,      # Inital value                                    
-        phase_lag_body=None
+        phase_lag_body=None,
+        w_limb_body=150,
+        limb_body_phase_offset=0,
+        body_gain=1,
+        limb_gain=1
     )
     sim_parameters.drive_ramp = np.linspace(0, 6, n_steps)  # Ramp as a new parameter   
     os.makedirs('./logs/ex2b_swim/', exist_ok=True)
@@ -66,7 +74,11 @@ def exercise_ramp_walk(timestep):
         spawn_position=[0, 0, 0.1],
         spawn_orientation=[0, 0, np.pi/2],
         drive=0,          
-        phase_lag_body=None, 
+        phase_lag_body=None,
+        w_limb_body=150,
+        limb_body_phase_offset=0,
+        body_gain=1,
+        limb_gain=1
     )
     sim_parameters.drive_ramp = np.linspace(0, 6, n_steps)  
     os.makedirs('./logs/ex2b_walk/', exist_ok=True)

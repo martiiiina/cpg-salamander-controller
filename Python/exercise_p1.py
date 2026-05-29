@@ -19,7 +19,7 @@ class DataState:
     state: SalamandraState
 
 
-def run_network(duration, update=False, drive=0, timestep=1e-2):
+def run_network(duration, update=False, drive=0, timestep=1e-2, decouple=False):
     """ Run network without MuJoCo and plot results
     Parameters
     ----------
@@ -40,12 +40,28 @@ def run_network(duration, update=False, drive=0, timestep=1e-2):
     limb_gradient = np.ones(8)
     full_gradient = np.concatenate([body_gradient, limb_gradient])  # NOTE: check
 
-    sim_parameters = SimulationParameters(
-        drive=drive[0] if not np.isscalar(drive) else drive,
-        amplitude_gradient=None,
-        phase_lag_body=None,
-        # Feel free to include parameters
-    )
+    if decouple:
+        sim_parameters = SimulationParameters(
+            drive=drive[0] if not np.isscalar(drive) else drive,
+            amplitude_gradient=None,
+            phase_lag_body=None,
+            w_limb_body=0,
+            limb_body_phase_offset=0,
+            body_gain=1,
+            limb_gain=1
+            # Feel free to include parameters
+        )
+    else:
+        sim_parameters = SimulationParameters(
+            drive=drive[0] if not np.isscalar(drive) else drive,
+            amplitude_gradient=None,
+            phase_lag_body=None,
+            w_limb_body=150,
+            limb_body_phase_offset=0,
+            body_gain=1,
+            limb_gain=1
+            # Feel free to include parameters
+        )
     #pylog.warning(
     #    'Modify the scalar drive to be a vector of length n_iterations. By doing so the drive will be modified to be drive[i] at each time step i.')
     state = SalamandraState.salamandra_robot(n_iterations, n_oscillators=32)
@@ -83,7 +99,8 @@ def run_network(duration, update=False, drive=0, timestep=1e-2):
     for i, time0 in enumerate(times[1:]):
         if update:
             network.robot_parameters.update(
-                SimulationParameters(drive=drive[i+1]
+                SimulationParameters(drive=drive[i+1],
+                                     w_limb_body=150,
                 )
             )
         network.step(i, time0, timestep)
@@ -97,7 +114,6 @@ def run_network(duration, update=False, drive=0, timestep=1e-2):
         n_iterations,
         toc - tic
     ))
-
     # Implement plots of network results
     #pylog.warning('Implement plots')
 
@@ -187,13 +203,55 @@ def run_network(duration, update=False, drive=0, timestep=1e-2):
     axes3[1].set_yticklabels(['0', 'π/2', 'π', '3π/2', '2π'])
     axes3[1].set_title('Same-side pairs — should be anti-phase'); axes3[1].legend(fontsize=8); axes3[1].grid(alpha=0.2)
     plt.tight_layout()
+
+    # Figure 4: Adjacent body segment phase lags
+    fig4, axes4 = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
+
+    # Left side: phase lag between adjacent segments (0→2, 2→4, ..., 12→14)
+    left_oscs  = [0, 2, 4, 6, 8, 10, 12, 14]
+    right_oscs = [1, 3, 5, 7, 9, 11, 13, 15]
+    colors = plt.cm.viridis(np.linspace(0, 1, len(left_oscs) - 1))
+
+    for i in range(len(left_oscs) - 1):
+        a, b = left_oscs[i], left_oscs[i+1]
+        axes4[0].plot(times, wpd(theta[:, b], theta[:, a]),
+                    color=colors[i], label=rf'$\theta_{{{b}}}-\theta_{{{a}}}$')
+
+    axes4[0].axhline(-2*np.pi/8, color='red', linestyle='--', alpha=0.7,
+                    label=r'Target $-\pi/4$')
+    axes4[0].set_ylim([-np.pi, np.pi])
+    axes4[0].set_yticks([-np.pi, -np.pi/2, -np.pi/4, 0, np.pi/4, np.pi/2, np.pi])
+    axes4[0].set_yticklabels(['-π', '-π/2', '-π/4', '0', 'π/4', 'π/2', 'π'])
+    axes4[0].set_ylabel('Phase lag [rad]')
+    axes4[0].set_title('Left body — adjacent segment phase lags')
+    axes4[0].legend(fontsize=7, ncol=4, loc='upper right')
+    axes4[0].grid(alpha=0.2)
+
+    for i in range(len(right_oscs) - 1):
+        a, b = right_oscs[i], right_oscs[i+1]
+        axes4[1].plot(times, wpd(theta[:, b], theta[:, a]),
+                    color=colors[i], label=rf'$\theta_{{{b}}}-\theta_{{{a}}}$')
+
+    axes4[1].axhline(-2*np.pi/8, color='red', linestyle='--', alpha=0.7,
+                    label=r'Target $-\pi/4$')
+    axes4[1].set_ylim([-np.pi, np.pi])
+    axes4[1].set_yticks([-np.pi, -np.pi/2, -np.pi/4, 0, np.pi/4, np.pi/2, np.pi])
+    axes4[1].set_yticklabels(['-π', '-π/2', '-π/4', '0', 'π/4', 'π/2', 'π'])
+    axes4[1].set_ylabel('Phase lag [rad]')
+    axes4[1].set_xlabel('Time [s]')
+    axes4[1].set_title('Right body — adjacent segment phase lags')
+    axes4[1].legend(fontsize=7, ncol=4, loc='upper right')
+    axes4[1].grid(alpha=0.2)
+
+    fig4.suptitle('Adjacent body segment phase lags', fontsize=14, fontweight='bold')
+    plt.tight_layout()
     return
 
 
 def exercise_1a_networks(plot, timestep=1e-2):
     """[Project 1] Exercise 1: """
 
-    run_network(duration=10, drive=2)      
+    run_network(duration=10, drive=2, decouple=False)      
 
     # Show plots
     if True:
@@ -217,6 +275,7 @@ def exercise_1b_networks(plot, timestep=1e-2):
         drive=drive,
         update=True,
         timestep=timestep,
+        decouple=False
     )
 
     # Show plots

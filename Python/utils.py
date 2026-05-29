@@ -149,3 +149,77 @@ def plot_stacked_group(ax, times, outputs, oscs, base_color, label, group_boxes=
         ax.plot([x_bar, x_bar], [y0, y1], color='black', linewidth=3, solid_capstyle='butt')
         ax.text(x_bar + 0.08, (y0 + y1) / 2, scale_label, fontsize=12, va='center')
 
+LINKS_MASSES = np.array([
+    0.328768, 0.274101, 0.107688, 0.107688, 0.107688,  # link_body_00 - link_body_04
+    0.0433459, 0.107688, 0.107688,                      # link_body_06 - link_body_08
+    0.18959,                                             # link_body_10
+    0.0194482, 0.164364, 0.0194482, 0.164364,           # link_leg_0_L - link_leg_0_R
+    0.0194482, 0.164364, 0.0194482, 0.164364,           # link_leg_1_L - link_leg_1_R
+    0.321614, 0.164651,                                  # link_body_05 link_body_09
+])
+TOTAL_MASS = np.sum(LINKS_MASSES)
+N_LINKS = len(LINKS_MASSES)  # 19
+
+def compute_fws(links_positions, times):
+    """
+    Compute average forward speed from CoM trajectory.
+    Forward axis is Y (index 1).
+
+    Parameters
+    ----------
+    links_positions : np.ndarray, shape (n_steps, n_links, 3)
+    times           : np.ndarray, shape (n_steps,)
+
+    Returns
+    -------
+    fwd_speed : float, [m/s]
+    """
+    com = np.sum(
+        links_positions[:, :N_LINKS, :] * LINKS_MASSES[np.newaxis, :, np.newaxis],
+        axis=1
+    ) / TOTAL_MASS  # (n_steps, 3)
+
+    dur = times[-1] - times[0]
+    fwd_speed = np.abs((com[-1, 1] - com[0, 1]) / dur)
+    return fwd_speed
+
+
+
+def compute_cot(links_positions, joints_torques, joints_velocities, times):
+    """
+    Compute Cost of Transport using positive mechanical power only.
+
+    CoT = E / (m * g * d_fwd)  where d_fwd is total CoM forward distance.
+
+    Parameters
+    ----------
+    links_positions    : np.ndarray, shape (n_steps, n_links, 3)
+    joints_torques     : np.ndarray, shape (n_steps, n_joints)
+    joints_velocities  : np.ndarray, shape (n_steps, n_joints)
+    times              : np.ndarray, shape (n_steps,)
+
+    Returns
+    -------
+    energy : float, [J]
+    cot    : float, dimensionless [J / (N·m)]
+    """
+    dt = times[1] - times[0]
+
+    # Only positive power (no regenerative storage)
+    power_positive = np.maximum(joints_torques * joints_velocities, 0)
+    energy = dt * np.sum(power_positive)
+
+    # CoM trajectory
+    com = np.sum(
+        links_positions[:, :N_LINKS, :] * LINKS_MASSES[np.newaxis, :, np.newaxis],
+        axis=1
+    ) / TOTAL_MASS  # (n_steps, 3)
+
+    # Integrate total forward distance (Y axis)
+    d_fwd = np.sum(np.abs(np.diff(com[:, 1])))
+
+    if d_fwd < 1e-6:
+        return energy, np.nan
+
+    cot = energy / (TOTAL_MASS * 9.81 * d_fwd)
+    return energy, cot
