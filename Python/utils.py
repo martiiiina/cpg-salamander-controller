@@ -94,7 +94,7 @@ def compute_instantaneous_frequency(times, phases):
     raise ValueError(f"phases must be 1D or 2D, got {phases.shape}")
 
 def plot_stacked_group(ax, times, outputs, oscs, base_color, label, group_boxes=None, 
-                       scale_bar=None, transition_times=None, wave_peaks=None, drive=None):
+                       scale_bar=None, transition_times=None, wave_peaks=None, drive=None, body = True):
     n = len(oscs)
 
     # Dynamically compute offset based on actual signal amplitude
@@ -120,7 +120,10 @@ def plot_stacked_group(ax, times, outputs, oscs, base_color, label, group_boxes=
         # oscillator labels
         ax.text(times[0] - label_margin, y[0], rf"$x_{osc}$", fontsize=10, va='center', ha='right', color='black')
 
-    ax.set_ylabel("x Body", fontsize=12)
+    if body:
+        ax.set_ylabel("x Body", fontsize=12)
+    else:
+        ax.set_ylabel("x Limb", fontsize=12)
     ax.set_title(label, fontsize=12, loc='left')
     ax.set_ylim(-0.5, n * offset + 0.5)
     ax.set_yticks([])
