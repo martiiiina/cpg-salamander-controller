@@ -152,16 +152,16 @@ def run_network(duration, update=False, drive=0, timestep=1e-2, decouple=False):
 
     plot_stacked_group(axes[0, 0], times, outputs, body_oscs_left,'#1f6fbf', 'Left body',
                         group_boxes=[([0,2,4,6], 'Trunk', '#1f6fbf'),([8,10,12,14], 'Tail', '#1a8c4e'),],
-                        transition_times=transition_times[0], scale_bar=(np.pi/3, r'$\pi/3$'), wave_peaks=wave_peaks_left, drive=drive)
+                        transition_times=transition_times[0], scale_bar=(np.pi/3, r'$\pi/3$'), wave_peaks=wave_peaks_left, drive=drive, body=True)
     plot_stacked_group(axes[0, 1], times, outputs, body_oscs_right, '#4a90e2', 'Right body',
                         group_boxes=[([1,3,5,7], 'Trunk', '#1f6fbf'),([9,11,13,15], 'Tail', '#1a8c4e'),],
                         transition_times=transition_times[0], scale_bar=(np.pi/3, r'$\pi/3$'), wave_peaks=wave_peaks_right, drive=drive)
     plot_stacked_group(axes[1, 0], times, outputs, [16,17,18,19,24,25,26,27], '#d4620a', 'Left limbs',
                         group_boxes=[([16,17,18,19], 'Fore', '#d4620a'),([24,25,26,27], 'Hind', '#8e44ad'),],
-                        transition_times=transition_times[0],scale_bar=(np.pi/3, r'$\pi/3$'), drive=drive)
+                        transition_times=transition_times[0],scale_bar=(np.pi/3, r'$\pi/3$'), drive=drive, body=False)
     plot_stacked_group(axes[1, 1], times, outputs, [20,21,22,23,28,29,30,31], '#c0392b', 'Right limbs',
                         group_boxes=[([20,21,22,23], 'Fore', '#c0392b'),([28,29,30,31], 'Hind', '#6c3483'),],
-                        transition_times=transition_times[0], scale_bar=(np.pi/3, r'$\pi/3$'), drive=drive)
+                        transition_times=transition_times[0], scale_bar=(np.pi/3, r'$\pi/3$'), drive=drive, body=False)
 
     freqs_log = compute_instantaneous_frequency(times, phases_log)
     n_freqs = freqs_log.shape[1]
