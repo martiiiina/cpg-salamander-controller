@@ -78,12 +78,13 @@ class RobotParameters(dict):
         # self.set_nominal_amplitudes(self.sim_parameters)  # R_i
         # print("GPGS: {}".format(gps[4, 0]))
         # print("drive: {}".format(self.sim_parameters.drive))
-        """
-        if hasattr(self.sim_parameters, 'drive_ramp'):
+        
+        
+        if hasattr(self.sim_parameters, 'drive_ramp') and self.sim_parameters.drive_ramp is not None:
                 self.sim_parameters.drive = self.sim_parameters.drive_ramp[iteration]
                 self.set_frequencies(self.sim_parameters)
                 self.set_nominal_amplitudes(self.sim_parameters)
-        """
+        
 
         """
         The simulator computes collision/contact forces between the robot and the environment.

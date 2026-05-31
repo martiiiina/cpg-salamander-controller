@@ -5,7 +5,12 @@ from dataclasses import dataclass
 
 import numpy as np
 import matplotlib.pyplot as plt
-from utils import plot_stacked_group, find_peak, find_travelling_wave_peaks
+from utils import (
+    plot_stacked_group,
+    find_peak,
+    find_travelling_wave_peaks,
+    compute_instantaneous_frequency,
+)
 from farms_core import pylog
 from salamandra_simulation.data import SalamandraState
 from salamandra_simulation.parse_args import save_plots
@@ -82,12 +87,6 @@ def run_network(duration, update=False, drive=0, timestep=1e-2, decouple=False):
         len(network.state.amplitudes(iteration=0))
     ])
     amplitudes_log[0, :] = network.state.amplitudes(iteration=0)
-    freqs_log = np.zeros([
-        n_iterations,
-        len(network.robot_parameters.freqs)
-    ])
-    freqs_log[0, :] = network.robot_parameters.freqs
-
     # comment below pass to run file
     #pylog.warning('Remove the pass to run your code!!')
     #pass
@@ -98,15 +97,11 @@ def run_network(duration, update=False, drive=0, timestep=1e-2, decouple=False):
     tic = time.time()
     for i, time0 in enumerate(times[1:]):
         if update:
-            network.robot_parameters.update(
-                SimulationParameters(drive=drive[i+1],
-                                     w_limb_body=150,
-                )
-            )
+            sim_parameters.drive = drive[i+1]
+            network.robot_parameters.update(sim_parameters)
         network.step(i, time0, timestep)
         phases_log[i+1, :] = network.state.phases(iteration=i+1)
         amplitudes_log[i+1, :] = network.state.amplitudes(iteration=i+1)
-        freqs_log[i+1, :] = network.robot_parameters.freqs
     toc = time.time()
 
     # Network performance
@@ -136,26 +131,76 @@ def run_network(duration, update=False, drive=0, timestep=1e-2, decouple=False):
         wave_peaks_left  = None
         wave_peaks_right = None
 
-    # Figure 1: body+limbs outputs - 2x2 GRID
-    fig, axes = plt.subplots(2, 2, figsize=(16, 10), sharex=True)
+    # Figure 1: body+limbs outputs + frequencies + drive - 3x2 GRID
+    fig, axes = plt.subplots(3, 2, figsize=(16, 13), sharex=True)
+
+    drive_markers = [1.0, 3.0, 5.0]
+    if np.isscalar(drive):
+        marker_times = []
+    else:
+        drive_series = np.asarray(drive, dtype=float)
+        marker_times = [
+            times[np.argmin(np.abs(drive_series - marker))]
+            for marker in drive_markers
+            if drive_series.min() <= marker <= drive_series.max()
+        ]
+
+    def add_drive_markers(*plot_axes):
+        for ax in plot_axes:
+            for marker_time in marker_times:
+                ax.axvline(marker_time, color='0.6', linestyle='--', linewidth=1.0, alpha=0.8, zorder=0)
 
     plot_stacked_group(axes[0, 0], times, outputs, body_oscs_left,'#1f6fbf', 'Left body',
                         group_boxes=[([0,2,4,6], 'Trunk', '#1f6fbf'),([8,10,12,14], 'Tail', '#1a8c4e'),],
-                        transition_times=transition_times[0], scale_bar=(np.pi/3, r'$\pi/3$'), wave_peaks=wave_peaks_left, drive=drive)
+                        transition_times=transition_times[0], scale_bar=(np.pi/3, r'$\pi/3$'), wave_peaks=wave_peaks_left, drive=drive, body=True)
     plot_stacked_group(axes[0, 1], times, outputs, body_oscs_right, '#4a90e2', 'Right body',
                         group_boxes=[([1,3,5,7], 'Trunk', '#1f6fbf'),([9,11,13,15], 'Tail', '#1a8c4e'),],
                         transition_times=transition_times[0], scale_bar=(np.pi/3, r'$\pi/3$'), wave_peaks=wave_peaks_right, drive=drive)
     plot_stacked_group(axes[1, 0], times, outputs, [16,17,18,19,24,25,26,27], '#d4620a', 'Left limbs',
                         group_boxes=[([16,17,18,19], 'Fore', '#d4620a'),([24,25,26,27], 'Hind', '#8e44ad'),],
-                        transition_times=transition_times[0],scale_bar=(np.pi/3, r'$\pi/3$'), drive=drive)
+                        transition_times=transition_times[0],scale_bar=(np.pi/3, r'$\pi/3$'), drive=drive, body=False)
     plot_stacked_group(axes[1, 1], times, outputs, [20,21,22,23,28,29,30,31], '#c0392b', 'Right limbs',
                         group_boxes=[([20,21,22,23], 'Fore', '#c0392b'),([28,29,30,31], 'Hind', '#6c3483'),],
-                        transition_times=transition_times[0], scale_bar=(np.pi/3, r'$\pi/3$'), drive=drive)
+                        transition_times=transition_times[0], scale_bar=(np.pi/3, r'$\pi/3$'), drive=drive, body=False)
 
-    axes[1,0].set_xlabel('Time [s]', fontsize=12)
-    axes[1,1].set_xlabel('Time [s]', fontsize=12)
-    fig.suptitle('Salamandra CPG muscle outputs', fontsize=18, fontweight='bold')
-    plt.tight_layout(rect=[0, 0, 1, 0.97])
+    freqs_log = compute_instantaneous_frequency(times, phases_log)
+    n_freqs = freqs_log.shape[1]
+    freq_colors = plt.cm.viridis(np.linspace(0.05, 0.95, n_freqs))
+    freq_alphas = np.linspace(0.9, 0.35, n_freqs)
+    for idx in range(n_freqs):
+        axes[2, 0].plot(
+            times,
+            freqs_log[:, idx],
+            color=(*freq_colors[idx][:3], freq_alphas[idx]),
+            linewidth=1.1,
+        )
+    axes[2, 0].set_title('Frequencies', fontsize=12, loc='left')
+    axes[2, 0].set_ylabel('Frequency [Hz]', fontsize=12)
+    axes[2, 0].spines['right'].set_visible(False)
+    axes[2, 0].spines['top'].set_visible(False)
+
+    if np.isscalar(drive):
+        drive_series = np.full_like(times, float(drive))
+    else:
+        drive_series = np.asarray(drive, dtype=float)
+        if drive_series.shape[0] != len(times):
+            drive_series = np.interp(
+                times,
+                np.linspace(times[0], times[-1], drive_series.shape[0]),
+                drive_series,
+            )
+    axes[2, 1].plot(times, drive_series, color='#333333', linewidth=1.8)
+    axes[2, 1].set_title('Drive', fontsize=12, loc='left')
+    axes[2, 1].set_ylabel('Drive', fontsize=12)
+    axes[2, 1].spines['right'].set_visible(False)
+    axes[2, 1].spines['top'].set_visible(False)
+
+    add_drive_markers(*axes.flat)
+
+    axes[2, 0].set_xlabel('Time [s]', fontsize=12)
+    axes[2, 1].set_xlabel('Time [s]', fontsize=12)
+    fig.suptitle('Salamandra CPG outputs, frequencies, and drive', fontsize=18, fontweight='bold')
+    plt.tight_layout(rect=[0, 0, 1, 0.96])
 
     def wpd(a, b):
         """Wrapped phase difference in [-π, π]"""
