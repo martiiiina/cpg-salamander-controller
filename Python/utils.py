@@ -61,8 +61,40 @@ def find_travelling_wave_peaks(outputs, times, oscs, after_time=10.0):
 
     return wave_peaks
 
+
+def compute_instantaneous_frequency(times, phases):
+    """Compute instantaneous frequency from oscillator phase traces.
+
+    Parameters
+    ----------
+    times : np.ndarray, shape (n_steps,)
+        Sample times.
+    phases : np.ndarray, shape (n_steps,) or (n_steps, n_channels)
+        Oscillator phases in radians.
+
+    Returns
+    -------
+    freq_hz : np.ndarray
+        Instantaneous frequency in Hz.
+    """
+    times = np.asarray(times)
+    phases = np.asarray(phases)
+
+    if times.ndim != 1 or times.size < 2:
+        raise ValueError("times must be a 1D array with at least two samples")
+
+    if phases.ndim == 1:
+        unwrapped = np.unwrap(phases)
+        return np.gradient(unwrapped, times) / (2.0 * np.pi)
+
+    if phases.ndim == 2:
+        unwrapped = np.unwrap(phases, axis=0)
+        return np.gradient(unwrapped, times, axis=0) / (2.0 * np.pi)
+
+    raise ValueError(f"phases must be 1D or 2D, got {phases.shape}")
+
 def plot_stacked_group(ax, times, outputs, oscs, base_color, label, group_boxes=None, 
-                       scale_bar=None, transition_times=None, wave_peaks=None, drive=None):
+                       scale_bar=None, transition_times=None, wave_peaks=None, drive=None, body = True):
     n = len(oscs)
 
     # Dynamically compute offset based on actual signal amplitude
@@ -88,7 +120,10 @@ def plot_stacked_group(ax, times, outputs, oscs, base_color, label, group_boxes=
         # oscillator labels
         ax.text(times[0] - label_margin, y[0], rf"$x_{osc}$", fontsize=10, va='center', ha='right', color='black')
 
-    ax.set_ylabel("x Body", fontsize=12)
+    if body:
+        ax.set_ylabel("x Body", fontsize=12)
+    else:
+        ax.set_ylabel("x Limb", fontsize=12)
     ax.set_title(label, fontsize=12, loc='left')
     ax.set_ylim(-0.5, n * offset + 0.5)
     ax.set_yticks([])
