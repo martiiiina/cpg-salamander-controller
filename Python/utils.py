@@ -258,3 +258,159 @@ def compute_cot(links_positions, joints_torques, joints_velocities, times):
 
     cot = energy / (TOTAL_MASS * 9.81 * d_fwd)
     return energy, cot
+
+def compute_lat_deviation(links_positions, times):
+    """
+    Compute Lateral Path Deviation as the RMS perpendicular distance from the
+    ideal straight-line trajectory connecting start and end of steady-state motion.
+
+    A perfectly straight gait yields D_lat = 0; larger values indicate lateral
+    wandering and reduced locomotor stability.
+
+    Parameters
+    ----------
+    links_positions : np.ndarray, shape (n_steps, n_links, 3)
+    times           : np.ndarray, shape (n_steps,)
+
+    Returns
+    -------
+    lateral_path_deviation_rms : float, [m]
+    """
+    # Steady-state selection: discard the first 20% of samples (transient) 
+    N = len(times)
+    start_idx = N // 5
+
+    # Centre-of-mass (CoM) trajectory via mass-weighted link positions
+    com = np.sum(
+        links_positions[:, :N_LINKS, :] * LINKS_MASSES[np.newaxis, :, np.newaxis],
+        axis=1
+    ) / TOTAL_MASS  # (n_steps, 3)
+
+    # Steady-state 2D horizontal position: X = lateral (index 0), Y = forward (index 1)
+    x = com[start_idx:, 0]
+    y = com[start_idx:, 1]
+
+    # Ideal straight-line path: line through P_start and P_end
+    P_start = np.array([x[0],  y[0]])
+    P_end   = np.array([x[-1], y[-1]])
+
+    direction   = P_end - P_start          # vector along the ideal path
+    path_length = np.linalg.norm(direction) # ||P_end - P_start||
+
+    if path_length < 1e-9:
+        # Robot did not translate; deviation is undefined -> return 0
+        return 0.0
+
+    # Perpendicular (point-to-line) distance for every sample 
+    dx, dy = direction
+    d = np.abs((x - P_start[0]) * dy - (y - P_start[1]) * dx) / path_length
+
+    # RMS deviation: D_lat = sqrt( mean(d_i^2) ) 
+    # higher weight to large deviations
+    lateral_path_deviation_rms = np.sqrt(np.mean(d ** 2))
+
+    return lateral_path_deviation_rms
+
+
+def compute_phase_locking_error(phi_axial, phi_limb, psi_desired):
+    """
+    Compute mean-absolute and RMS phase-locking error between limb and axial
+    CPG oscillators.
+
+    The metric quantifies how well the limb oscillators maintain the desired
+    phase relationship psi_desired with respect to the axial oscillators.
+    Perfect coordination yields error = 0.
+
+    Parameters
+    ----------
+    phi_axial   : np.ndarray, shape (N,)  – axial oscillator phase [rad]
+    phi_limb    : np.ndarray, shape (N,)  – limb oscillator phase [rad]
+    psi_desired : float                   – desired phase lag [rad]
+
+    Returns
+    -------
+    phase_locking_error_mean : float, [rad]
+    phase_locking_error_rms  : float, [rad]
+    """
+    # Steady-state selection: discard the first 20% of samples (transient) 
+    N = len(phi_axial)
+    start_idx = N // 5
+
+    phi_axial_ss = phi_axial[start_idx:]
+    phi_limb_ss  = phi_limb[start_idx:]
+
+    # 1. Instantaneous phase difference 
+    delta_phi = phi_limb_ss - phi_axial_ss
+
+    # 2. Wrap delta_phi to [-pi, pi] 
+    delta_phi_wrapped = (delta_phi + np.pi) % (2.0 * np.pi) - np.pi
+
+    # 3. Residual error after removing the desired phase offset 
+    error_raw = delta_phi_wrapped - psi_desired
+    error_phi = (error_raw + np.pi) % (2.0 * np.pi) - np.pi
+
+    # 4. Summary statistics 
+    phase_locking_error_mean = np.mean(np.abs(error_phi))
+
+    # RMS Error: penalising large transient phase slips more than MAE
+    phase_locking_error_rms  = np.sqrt(np.mean(error_phi ** 2))
+
+    return phase_locking_error_mean, phase_locking_error_rms
+
+
+def compute_heading_variance(links_positions, times):
+    """
+    Compute the circular variance of the robot's heading (yaw angle) during
+    steady-state locomotion.
+
+    Yaw is estimated from the direction of the CoM velocity vector in the
+    horizontal plane: yaw(t) = arctan2(v_x(t), v_y(t)), where Y is the
+    forward axis and X is the lateral axis (consistent with compute_fws).
+
+    Standard variance cannot be applied to angles because yaw wraps at ±pi.
+    Circular statistics (Mardia & Jupp, 2000) are used instead.
+
+    Parameters
+    ----------
+    links_positions : np.ndarray, shape (n_steps, n_links, 3)
+    times           : np.ndarray, shape (n_steps,)
+
+    Returns
+    -------
+    heading_circular_variance : float, dimensionless in [0, 1]
+        0 = perfectly constant heading; values near 1 = highly dispersed heading.
+    """
+    # --- Centre-of-mass trajectory (same formula as compute_fws) -------------
+    com = np.sum(
+        links_positions[:, :N_LINKS, :] * LINKS_MASSES[np.newaxis, :, np.newaxis],
+        axis=1
+    ) / TOTAL_MASS  # (n_steps, 3)
+
+    # --- Instantaneous yaw from CoM velocity direction -----------------------
+    # Finite-difference velocity in the horizontal plane (X = lateral, Y = forward).
+    # np.gradient uses central differences, giving one value per sample.
+    v_x = np.gradient(com[:, 0], times)
+    v_y = np.gradient(com[:, 1], times)
+
+    # yaw(t) = direction of travel in the XY plane; arctan2 maps to (-pi, pi]
+    yaw = np.arctan2(v_x, v_y)
+
+    # --- Steady-state selection: discard the first 20% of samples (transient) ---
+    N = len(times)
+    start_idx = N // 5
+
+    yaw_ss = yaw[start_idx:]
+
+    # 1. Mean cosine and sine components
+    # Projecting angles onto the unit circle before averaging avoids the
+    # wrap-around problem of direct angle arithmetic.
+    C = np.mean(np.cos(yaw_ss))
+    S = np.mean(np.sin(yaw_ss))
+
+    # 2. Mean resultant length
+    R = np.sqrt(C ** 2 + S ** 2)
+
+    # 3. Circular variance: V = 1 - R  in [0, 1]
+    heading_circular_variance = 1.0 - R
+
+    return heading_circular_variance

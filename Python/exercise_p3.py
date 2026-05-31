@@ -1,3 +1,6 @@
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend for faster plotting and headless environments
+
 """Exercise 3: Limb and Spine Coordination while walking"""
 
 import os
@@ -5,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from exercise_p1 import run_network
 from plot_traj import load_simulation
-from utils import compute_fws, compute_cot
+from utils import compute_fws, compute_cot, compute_lat_deviation, compute_phase_locking_error, compute_heading_variance
 from salamandra_simulation.save_figures import save_figures
 from salamandra_simulation.simulation import simulation, simulation_sweep
 from simulation_parameters import SimulationParameters
@@ -61,6 +64,31 @@ def exercise_3_disable_limb_spine_coupling(timestep):
 
     print(f"Forward speed: {fws}")
     print(f"Cost of Transport (CoT): {cot}")
+    
+    # Stability metrics could be added here (e.g., variance of CoM, foot clearance, etc.)
+
+    lat_deviation = compute_lat_deviation(links_positions, times)
+
+    # Oscillator phases are not saved directly; estimate them from joint data.
+    # The instantaneous phase of a harmonic oscillator can be read from the
+    # phase plane: phi = arctan2(velocity, position).
+    # Joint indices: spine joints 0-7 (axial), limb girdle joints 8/10/12/14.
+    # Use joint 0 as the reference axial oscillator and joint 8 (front-left
+    # girdle) as the reference limb oscillator.
+    joint_angles     = joints[:, :, 0]   # shape (n_steps, n_joints)
+    joint_velocities = joints[:, :, 1]
+    phi_axial  = np.arctan2(joint_velocities[:, 0],  joint_angles[:, 0])
+    phi_limb   = np.arctan2(joint_velocities[:, 8],  joint_angles[:, 8])
+    psi_desired = sim_parameters.limb_body_phase_offset   # desired phase lag [rad]
+    phase_locking_error_mean, phase_locking_error_rms = compute_phase_locking_error(phi_axial, phi_limb, psi_desired)
+
+    heading_variance = compute_heading_variance(links_positions, times)
+    
+    print(f"Lateral path deviation (RMS): {lat_deviation:.4f} m")
+    print(f"Phase locking error (MAE): {phase_locking_error_mean:.4f} rad")
+    print(f"Phase locking error (RMS): {phase_locking_error_rms:.4f} rad")
+    print(f"Heading variance: {heading_variance:.4f}")
+
     return
 
 
