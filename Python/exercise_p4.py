@@ -82,10 +82,10 @@ def exercise_4a_transition(timestep):
     sim_parameters = SimulationParameters(
         duration=40,
         timestep=timestep,
-        # Start swimming then walk onto land
+        # Start walking then swim
         spawn_position=[-4, 0, 0.0],
         spawn_orientation=[0, 0, np.pi],
-        drive=2.5,                 # initial swimming drive
+        drive=2.5,                 # initial walking drive
         update_drive=True, 
         w_limb_body=150,
         limb_body_phase_offset=np.pi/4,
