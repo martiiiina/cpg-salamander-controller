@@ -24,7 +24,7 @@ class DataState:
     state: SalamandraState
 
 
-def run_network(duration, update=False, drive=0, timestep=1e-2, decouple=False):
+def run_network(duration, update=False, drive=0, timestep=1e-2, decouple=False, amplitude_gradient=None, phase_lag_body=None):
     """ Run network without MuJoCo and plot results
     Parameters
     ----------
@@ -48,8 +48,8 @@ def run_network(duration, update=False, drive=0, timestep=1e-2, decouple=False):
     if decouple:
         sim_parameters = SimulationParameters(
             drive=drive[0] if not np.isscalar(drive) else drive,
-            amplitude_gradient=None,
-            phase_lag_body=None,
+            amplitude_gradient=amplitude_gradient,
+            phase_lag_body=phase_lag_body,
             w_limb_body=0,
             limb_body_phase_offset=0,
             body_gain=1,
@@ -59,8 +59,8 @@ def run_network(duration, update=False, drive=0, timestep=1e-2, decouple=False):
     else:
         sim_parameters = SimulationParameters(
             drive=drive[0] if not np.isscalar(drive) else drive,
-            amplitude_gradient=None,
-            phase_lag_body=None,
+            amplitude_gradient=amplitude_gradient,
+            phase_lag_body=phase_lag_body,
             w_limb_body=150,
             limb_body_phase_offset=0,
             body_gain=1,
@@ -293,10 +293,10 @@ def run_network(duration, update=False, drive=0, timestep=1e-2, decouple=False):
     return
 
 
-def exercise_1a_networks(plot, timestep=1e-2):
+def exercise_1a_networks(plot, timestep=1e-2, amplitude_gradient=None, phase_lag_body=None, drive = 0):
     """[Project 1] Exercise 1: """
 
-    run_network(duration=10, drive=2, decouple=False)      
+    run_network(duration=10, drive=drive, decouple=False, timestep=timestep, amplitude_gradient=amplitude_gradient, phase_lag_body=phase_lag_body)      
 
     # Show plots
     if True:
@@ -307,7 +307,7 @@ def exercise_1a_networks(plot, timestep=1e-2):
         return
 
 
-def exercise_1b_networks(plot, timestep=1e-2):
+def exercise_1b_networks(plot, timestep=1e-2, amplitude_gradient=None, phase_lag_body=None):
     """Exercise 1b: Drive ramp"""
 
     duration = 20
@@ -320,6 +320,8 @@ def exercise_1b_networks(plot, timestep=1e-2):
         drive=drive,
         update=True,
         timestep=timestep,
+        amplitude_gradient=amplitude_gradient,
+        phase_lag_body=phase_lag_body,
         decouple=False
     )
 
@@ -334,5 +336,12 @@ def exercise_1b_networks(plot, timestep=1e-2):
 
 if __name__ == '__main__':
     exercise_1a_networks(plot=not save_plots())
-    exercise_1b_networks(plot=not save_plots())
+    exercise_1b_networks(plot=not save_plots(), amplitude_gradient=amplitude_gradient)
+
+    # R_head = 0.25
+    # R_tail = 1
+    # amplitude_gradient = R_head + (R_tail - R_head) * (np.arange(8) / 7) # Linear gradient from head to tail
+    # amplitude_gradient = np.repeat(amplitude_gradient, 2)  # Same gradient for left and right body; limbs have gradient of 1
+    # exercise_1a_networks(plot=not save_plots(), drive = 4)
+    # exercise_1a_networks(plot=not save_plots(), drive = 4, amplitude_gradient=amplitude_gradient)
 

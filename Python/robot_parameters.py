@@ -313,6 +313,9 @@ class RobotParameters(dict):
         else:   
             R_i_limbs = 0
 
-        self.nominal_amplitudes[0:16] = R_i_body
+        if d <= d_high_limbs:
+            self.nominal_amplitudes[0:16] = R_i_body 
+        else:
+            self.nominal_amplitudes[0:16] = R_i_body * self.amplitude_gradient
         self.nominal_amplitudes[16:32] = R_i_limbs
 

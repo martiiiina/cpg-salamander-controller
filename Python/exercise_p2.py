@@ -93,9 +93,47 @@ def exercise_ramp_walk(timestep):
     )
     return
 
+def exercise_swim(timestep, amplitude_gradient=None):
+    "[Project 1 EXTRA] Q2 Swimming with fixed drive, analyze impact of gradient"
+    # Use exercise_example.py for reference
+    sim_parameters = SimulationParameters(
+        duration=15,
+        timestep=timestep,
+        spawn_position=[0, 0, 0.1],
+        spawn_orientation=[0, 0, np.pi/2],
+        drive=4,          # fixed drive in walking regime
+        phase_lag_body=None, # your walking phase lag from ex1
+        w_limb_body=150,
+        limb_body_phase_offset=np.pi/4,
+        body_gain=1,
+        limb_gain=1,
+        amplitude_gradient=amplitude_gradient
+    )
+    os.makedirs('./logs/gradient/', exist_ok=True)
+    if amplitude_gradient is not None:
+        PATH = f'./logs/gradient/sim_ampgrad_{timestep:.0e}'
+        VIDEO_PATH = f'./logs/gradient/video_swimming_ampgrad.mp4'
+    else:
+        PATH = f'./logs/gradient/sim_noampgrad_{timestep:.0e}'
+        VIDEO_PATH = f'./logs/gradient/video_swimming_noampgrad.mp4'
+    sim, data = simulation(
+        sim_parameters=sim_parameters,
+        arena='water',
+        fast=True,
+        output=PATH,
+        record=True,
+        record_path=VIDEO_PATH,
+    )
+    return
 
 if __name__ == '__main__':
     exercise_walk(timestep=5e-3)
     exercise_ramp_swim(timestep=5e-3)
     exercise_ramp_walk(timestep=5e-3)
-
+    
+    # R_head = 0.25
+    # R_tail = 1
+    # amplitude_gradient = R_head + (R_tail - R_head) * (np.arange(8) / 7) # Linear gradient from head to tail
+    # amplitude_gradient = np.repeat(amplitude_gradient, 2)  # Same gradient for left and right body; limbs have gradient of 1
+    # exercise_swim(timestep=5e-3)
+    # exercise_swim(timestep=5e-3, amplitude_gradient=amplitude_gradient)    
