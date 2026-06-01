@@ -39,11 +39,12 @@ def run_network(duration, update=False, drive=0, timestep=1e-2, decouple=False):
     times = np.arange(0, duration, timestep)
     n_iterations = len(times)
     
+    # TODO: Decide if add amplitude gradient
     # Amplitude gradient from head to tail
     n_body_joints = 8
     body_gradient = np.linspace(0.5, 1.0, n_body_joints)
     limb_gradient = np.ones(8)
-    full_gradient = np.concatenate([body_gradient, limb_gradient])  # NOTE: check
+    full_gradient = np.concatenate([body_gradient, limb_gradient]) 
 
     if decouple:
         sim_parameters = SimulationParameters(
@@ -119,6 +120,7 @@ def run_network(duration, update=False, drive=0, timestep=1e-2, decouple=False):
     ##########################
     # VISUALIZATION PLOTS 
     ##########################
+
     transition_times = find_peak(drive, outputs, times)
     # Find travelling wave peaks for body oscillators after second transition
     body_oscs_left  = [0,2,4,6,8,10,12,14]
@@ -224,7 +226,7 @@ def run_network(duration, update=False, drive=0, timestep=1e-2, decouple=False):
     axes2[1].plot(times, np.abs(wpd_pos(theta[:,17], theta[:,16])), color='orange', label=r'$|\theta_{17}-\theta_{16}|$ girdle antagonists')
     axes2[1].plot(times, np.abs(wpd_pos(theta[:,19], theta[:,18])), color='crimson', linestyle=':', label=r'$|\theta_{19}-\theta_{18}|$ knee antagonists')
     axes2[1].axhline(np.pi, color='green', linestyle='--', alpha=0.7, label=r'Target $\pi$')
-    axes2[1].set_ylim([0, 2*np.pi+0.3]); axes2[1].set_ylabel('Phase [rad]'); axes2[1].set_xlabel('Time [s]')
+    axes2[1].set_ylim([0, 2*np.pi]); axes2[1].set_ylabel('Phase [rad]'); axes2[1].set_xlabel('Time [s]')
     axes2[1].set_yticks([0, np.pi/2, np.pi, 3*np.pi/2, 2*np.pi])
     axes2[1].set_yticklabels(['0', 'π/2', 'π', '3π/2', '2π'])
     axes2[1].set_title('Antagonist anti-phase'); axes2[1].legend(fontsize=8); axes2[1].grid(alpha=0.2)
@@ -243,7 +245,7 @@ def run_network(duration, update=False, drive=0, timestep=1e-2, decouple=False):
     axes3[1].plot(times, wpd_pos(theta[:,20], theta[:,16]), color='red',    label=r'$\theta_{20}-\theta_{16}$ FL vs RF (target $\pi$)')
     axes3[1].plot(times, wpd_pos(theta[:,24], theta[:,16]), color='orange',  label=r'$\theta_{24}-\theta_{16}$ FL vs LH (target $\pi$)')
     axes3[1].axhline( np.pi, color='gray', linestyle='--', alpha=0.7)
-    axes3[1].set_ylim([0, 2*np.pi+0.3]); axes3[1].set_ylabel('Phase [rad]'); axes3[1].set_xlabel('Time [s]')
+    axes3[1].set_ylim([0, 2*np.pi]); axes3[1].set_ylabel('Phase [rad]'); axes3[1].set_xlabel('Time [s]')
     axes3[1].set_yticks([0, np.pi/2, np.pi, 3*np.pi/2, 2*np.pi])
     axes3[1].set_yticklabels(['0', 'π/2', 'π', '3π/2', '2π'])
     axes3[1].set_title('Same-side pairs — should be anti-phase'); axes3[1].legend(fontsize=8); axes3[1].grid(alpha=0.2)
@@ -262,9 +264,11 @@ def run_network(duration, update=False, drive=0, timestep=1e-2, decouple=False):
         axes4[0].plot(times, wpd(theta[:, b], theta[:, a]),
                     color=colors[i], label=rf'$\theta_{{{b}}}-\theta_{{{a}}}$')
 
-    axes4[0].axhline(-2*np.pi/8, color='red', linestyle='--', alpha=0.7,
-                    label=r'Target $-\pi/4$')
-    axes4[0].set_ylim([-np.pi, np.pi])
+    axes4[0].axhline(0, color='red', linestyle='--', alpha=0.7)
+    axes4[0].axhline(-np.pi, color='red', linestyle='--', alpha=0.7)
+    if not np.isscalar(drive):
+        axes4[0].axhline(-np.pi/4, color='red', linestyle='--', alpha=0.7)
+    axes4[0].set_ylim([-np.pi-0.3, np.pi+0.3])
     axes4[0].set_yticks([-np.pi, -np.pi/2, -np.pi/4, 0, np.pi/4, np.pi/2, np.pi])
     axes4[0].set_yticklabels(['-π', '-π/2', '-π/4', '0', 'π/4', 'π/2', 'π'])
     axes4[0].set_ylabel('Phase lag [rad]')
@@ -277,9 +281,11 @@ def run_network(duration, update=False, drive=0, timestep=1e-2, decouple=False):
         axes4[1].plot(times, wpd(theta[:, b], theta[:, a]),
                     color=colors[i], label=rf'$\theta_{{{b}}}-\theta_{{{a}}}$')
 
-    axes4[1].axhline(-2*np.pi/8, color='red', linestyle='--', alpha=0.7,
-                    label=r'Target $-\pi/4$')
-    axes4[1].set_ylim([-np.pi, np.pi])
+    axes4[1].axhline(0, color='red', linestyle='--', alpha=0.7)
+    axes4[1].axhline(-np.pi, color='red', linestyle='--', alpha=0.7)
+    if not np.isscalar(drive):
+        axes4[1].axhline(-np.pi/4, color='red', linestyle='--', alpha=0.7)
+    axes4[1].set_ylim([-np.pi-0.3, np.pi+0.3])
     axes4[1].set_yticks([-np.pi, -np.pi/2, -np.pi/4, 0, np.pi/4, np.pi/2, np.pi])
     axes4[1].set_yticklabels(['-π', '-π/2', '-π/4', '0', 'π/4', 'π/2', 'π'])
     axes4[1].set_ylabel('Phase lag [rad]')
@@ -296,7 +302,7 @@ def run_network(duration, update=False, drive=0, timestep=1e-2, decouple=False):
 def exercise_1a_networks(plot, timestep=1e-2):
     """[Project 1] Exercise 1: """
 
-    run_network(duration=10, drive=2, decouple=False)      
+    run_network(duration=15, drive=2, decouple=False)      
 
     # Show plots
     if True:
