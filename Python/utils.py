@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.colors as mcolors
 import matplotlib.patches as patches
+import matplotlib.pyplot as plt
+from farms_core import pylog
 from scipy.signal import find_peaks
 
 def find_peak(drive, outputs, times):
@@ -118,7 +120,7 @@ def plot_stacked_group(ax, times, outputs, oscs, base_color, label, group_boxes=
         y = outputs[:, osc] + (n - 1 - idx) * offset
         ax.plot(times, y, color=color, linewidth=1.8)
         # oscillator labels
-        ax.text(times[0] - label_margin, y[0], rf"$x_{osc}$", fontsize=10, va='center', ha='right', color='black')
+        ax.text(times[0] - label_margin, y[0], rf"$x_{{{osc}}}$", fontsize=10, va='center', ha='right', color='black')
 
     if body:
         ax.set_ylabel("x Body", fontsize=12)
