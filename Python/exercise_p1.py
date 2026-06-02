@@ -4,6 +4,7 @@ import time
 from dataclasses import dataclass
 
 import numpy as np
+import os
 import matplotlib.pyplot as plt
 from utils import (
     plot_stacked_group,
@@ -39,13 +40,6 @@ def run_network(duration, update=False, drive=0, timestep=1e-2, decouple=False, 
     times = np.arange(0, duration, timestep)
     n_iterations = len(times)
     
-    # TODO: Decide if add amplitude gradient
-    # Amplitude gradient from head to tail
-    n_body_joints = 8
-    body_gradient = np.linspace(0.5, 1.0, n_body_joints)
-    limb_gradient = np.ones(8)
-    full_gradient = np.concatenate([body_gradient, limb_gradient]) 
-
     if decouple:
         sim_parameters = SimulationParameters(
             drive=drive[0] if not np.isscalar(drive) else drive,
@@ -204,6 +198,17 @@ def run_network(duration, update=False, drive=0, timestep=1e-2, decouple=False, 
     fig.suptitle('Salamandra CPG outputs, frequencies, and drive', fontsize=18, fontweight='bold')
     plt.tight_layout(rect=[0, 0, 1, 0.96])
 
+    if np.isscalar(drive):
+        out_dir = os.path.join("logs", "ex1a")
+        os.makedirs(out_dir, exist_ok=True)
+        fname = os.path.join(out_dir, 'cpg_output_fix.png')
+        fig.savefig(fname, bbox_inches='tight')
+    else:
+        out_dir = os.path.join("logs", "ex1b")
+        os.makedirs(out_dir, exist_ok=True)
+        fname = os.path.join(out_dir, 'cpg_output_ramp.png')
+        fig.savefig(fname, bbox_inches='tight')
+
     def wpd(a, b):
         """Wrapped phase difference in [-π, π]"""
         return np.angle(np.exp(1j * (a - b)))
@@ -232,6 +237,17 @@ def run_network(duration, update=False, drive=0, timestep=1e-2, decouple=False, 
     axes2[1].set_title('Antagonist anti-phase'); axes2[1].legend(fontsize=8); axes2[1].grid(alpha=0.2)
     plt.tight_layout()
 
+    if np.isscalar(drive):
+        out_dir = os.path.join("logs", "ex1a")
+        os.makedirs(out_dir, exist_ok=True)
+        fname = os.path.join(out_dir, 'intralimb_fix.png')
+        fig2.savefig(fname, bbox_inches='tight')
+    else:
+        out_dir = os.path.join("logs", "ex1b")
+        os.makedirs(out_dir, exist_ok=True)
+        fname = os.path.join(out_dir, 'intralimb_ramp.png')
+        fig2.savefig(fname, bbox_inches='tight')
+
     # Figure 3: Inter-limb trot diagnostics 
     fig3, axes3 = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
     axes3[0].plot(times, wpd(theta[:,28], theta[:,16]), color='blue',  label=r'$\theta_{28}-\theta_{16}$ FL vs RH (target 0)')
@@ -250,6 +266,17 @@ def run_network(duration, update=False, drive=0, timestep=1e-2, decouple=False, 
     axes3[1].set_yticklabels(['0', 'π/2', 'π', '3π/2', '2π'])
     axes3[1].set_title('Same-side pairs — should be anti-phase'); axes3[1].legend(fontsize=8); axes3[1].grid(alpha=0.2)
     plt.tight_layout()
+
+    if np.isscalar(drive):
+        out_dir = os.path.join("logs", "ex1a")
+        os.makedirs(out_dir, exist_ok=True)
+        fname = os.path.join(out_dir, 'interlimb_fix.png')
+        fig3.savefig(fname, bbox_inches='tight')
+    else:
+        out_dir = os.path.join("logs", "ex1b")
+        os.makedirs(out_dir, exist_ok=True)
+        fname = os.path.join(out_dir, 'interlimb_ramp.png')
+        fig3.savefig(fname, bbox_inches='tight')
 
     # Figure 4: Adjacent body segment phase lags
     fig4, axes4 = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
@@ -296,20 +323,38 @@ def run_network(duration, update=False, drive=0, timestep=1e-2, decouple=False, 
 
     fig4.suptitle('Adjacent body segment phase lags', fontsize=14, fontweight='bold')
     plt.tight_layout()
+
+    if np.isscalar(drive):
+        out_dir = os.path.join("logs", "ex1a")
+        os.makedirs(out_dir, exist_ok=True)
+        fname = os.path.join(out_dir, 'body_fix.png')
+        fig4.savefig(fname, bbox_inches='tight')
+    else:
+        out_dir = os.path.join("logs", "ex1b")
+        os.makedirs(out_dir, exist_ok=True)
+        fname = os.path.join(out_dir, 'body_ramp.png')
+        fig4.savefig(fname, bbox_inches='tight')
+
     return
 
 
-def exercise_1a_networks(plot, timestep=1e-2, amplitude_gradient=None, phase_lag_body=None, drive = 0):
+def exercise_1a_networks(plot, timestep=1e-2, amplitude_gradient=None, phase_lag_body=None, drive = 2.5):
     """[Project 1] Exercise 1: """
 
-    run_network(duration=15, drive=drive, decouple=False, timestep=timestep, amplitude_gradient=amplitude_gradient, phase_lag_body=phase_lag_body)      
+    run_network(
+        duration=20, 
+        drive=drive, 
+        decouple=False, 
+        timestep=timestep, 
+        amplitude_gradient=amplitude_gradient, 
+        phase_lag_body=phase_lag_body)      
 
     # Show plots
     if True:
         if plot:
             plt.show()
         else:
-            save_figures()
+            save_plots()
         return
 
 
@@ -336,7 +381,7 @@ def exercise_1b_networks(plot, timestep=1e-2, amplitude_gradient=None, phase_lag
         if plot:
             plt.show()
         else:
-            save_figures()
+            save_plots()
         return
 
 

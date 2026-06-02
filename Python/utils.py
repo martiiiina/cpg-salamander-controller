@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.colors as mcolors
 import matplotlib.patches as patches
+import matplotlib.pyplot as plt
+from farms_core import pylog
 from scipy.signal import find_peaks
 
 def find_peak(drive, outputs, times):
