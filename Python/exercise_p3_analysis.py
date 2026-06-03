@@ -7,12 +7,12 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from plot_traj import load_simulation
-from utils import compute_fws, compute_cot, compute_lat_deviation, compute_phase_locking_error, compute_heading_variance
+from utils import compute_fws, compute_cot, compute_lat_deviation, compute_phase_locking_error, compute_heading_variance, plot_spine_phase_lag
 
 
-def exercise_3_disable_limb_spine_coupling(timestep):
+def exercise_3_disable_limb_spine_coupling(timestep, log_path = None):
     """ Walk with disabled limb-spine limbs """
-    log_path = './logs/ex3.2_walk/sim_0/simulation.hdf5'
+    
     try:
         links, joints, times = load_simulation(log_path)
     except Exception as e:
@@ -37,6 +37,8 @@ def exercise_3_disable_limb_spine_coupling(timestep):
     phi_limb   = np.arctan2(joint_velocities[:, 8],  joint_angles[:, 8])
     psi_desired = 0
     phase_locking_error_mean, phase_locking_error_rms = compute_phase_locking_error(phi_axial, phi_limb, psi_desired)
+    
+    mean_lag = plot_spine_phase_lag(times, joint_angles, joint_velocities)
 
     heading_variance = compute_heading_variance(links_positions, times)
 
@@ -44,6 +46,7 @@ def exercise_3_disable_limb_spine_coupling(timestep):
     print(f"Phase locking error (MAE): {phase_locking_error_mean:.4f} rad")
     print(f"Phase locking error (RMS): {phase_locking_error_rms:.4f} rad")
     print(f"Heading variance: {heading_variance:.4f}")
+    # print(f"Mean spine phase lag: {mean_lag:.4f} rad")
 
     return
 
@@ -248,7 +251,8 @@ def exercise_3b_coordination(timestep):
 
 
 if __name__ == '__main__':
-    # exercise_3_disable_limb_spine_coupling(timestep=5e-3)
+    exercise_3_disable_limb_spine_coupling(timestep=5e-3, log_path = './logs/ex3.2_walk/sim_0/simulation.hdf5')
+    exercise_3_disable_limb_spine_coupling(timestep=5e-3, log_path = './logs/ex2a_walk/sim_0/simulation.hdf5')
     # exercise_3_limb_spine_antiphase(timestep=5e-3)
     # exercise_3a_coordination(timestep=5e-3)
-    exercise_3b_coordination(timestep=5e-3)
+    # exercise_3b_coordination(timestep=5e-3)

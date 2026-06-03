@@ -4,6 +4,7 @@ import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 from farms_core import pylog
 from scipy.signal import find_peaks
+from scipy.ndimage import uniform_filter1d
 
 def find_peak(drive, outputs, times):
 
@@ -416,3 +417,55 @@ def compute_heading_variance(links_positions, times):
     heading_circular_variance = 1.0 - R
 
     return heading_circular_variance
+
+def plot_spine_phase_lag(times, joint_angles, joint_velocities, plot = True, steady_state_time = 2.0, smooth_window = 50):
+    n_lags = 7
+    spine_phase_lags = np.zeros((joint_angles.shape[0], n_lags))
+    mean_lag = np.zeros(n_lags)
+    
+    # Isolate the index where the robot has reached a steady-state gait
+    steady_idx = np.argmax(times >= steady_state_time)
+    
+    for i in range(n_lags):
+        phi_current = np.arctan2(joint_velocities[:, i],  joint_angles[:, i])
+        phi_next = np.arctan2(joint_velocities[:, i + 1], joint_angles[:, i + 1])
+        
+        # Wrap the difference strictly into [-pi, pi]
+        diff = (phi_next - phi_current + np.pi) % (2 * np.pi) - np.pi
+        spine_phase_lags[:, i] = diff
+        
+        # Calculate the mathematical Circular Mean on the steady-state portion only
+        steady_diff = diff[steady_idx:]
+        mean_lag[i] = np.arctan2(np.mean(np.sin(steady_diff)), np.mean(np.cos(steady_diff)))
+
+    if plot:
+        fig, axes =plt.subplots(2, 1, figsize=(10, 5), sharex=True)
+        
+        for i in range(n_lags):
+            # Apply a rolling average filter purely for visualization
+            smoothed_lag = uniform_filter1d(spine_phase_lags[:, i], size=smooth_window)
+            axes[0].plot(times, smoothed_lag, label=f'Lag {i} to {i+1}', alpha=0.85)
+        for i in range(n_lags + 1):
+            axes[1].plot(times, joint_angles[:, i], label=f'Spine {i}', alpha=0.85)
+            
+        axes[1].set_xlabel('Time [s]')
+        axes[0].set_ylabel('Phase Lag [rad]')
+        axes[0].set_title('Spine Joint Phase Lags (Smoothed Time Series)')
+        
+        axes[1].set_ylabel('Angle [rad]')
+        axes[1].set_title(f'Spine Joints')
+        axes[1].grid(True, alpha=0.3)
+        
+        # Format the Y-axis to cleanly display Pi intervals
+        axes[0].set_yticks([-np.pi, -np.pi/2, 0, np.pi/2, np.pi], 
+                            [r'$-\pi$', r'$-\pi/2$', r'$0$', r'$\pi/2$', r'$\pi$'])
+        axes[0].set_ylim(-np.pi - 0.2, np.pi + 0.2)
+        
+        # Move legend outside the plot so it doesn't cover the data lines
+        axes[0].legend(bbox_to_anchor=(1.02, 1), loc="upper left")
+        axes[1].legend(bbox_to_anchor=(1.02, 1), loc="upper left")
+        axes[0].grid(True, linestyle='--', alpha=0.6)
+        plt.tight_layout()
+        plt.show()
+        
+    return mean_lag

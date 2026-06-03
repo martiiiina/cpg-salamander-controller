@@ -150,8 +150,9 @@ def analyze_simulation(log_path, title_suffix='', show=True):
 # Keep standalone execution working
 if __name__ == '__main__':
     analyze_simulation('./logs/ex2a_walk/sim_0/simulation.hdf5')
-    analyze_simulation('./logs/ex2b_swim/sim_0/simulation.hdf5')
-    analyze_simulation('./logs/ex2b_walk/sim_0/simulation.hdf5')
+    # analyze_simulation('./logs/ex2b_swim/sim_0/simulation.hdf5')
+    # analyze_simulation('./logs/ex2b_walk/sim_0/simulation.hdf5')
+    analyze_simulation('./logs/ex3.2_walk/sim_0/simulation.hdf5')
     
-    analyze_simulation('./logs/gradient/sim_noampgrad_5e-03/simulation.hdf5', title_suffix='(No Amplitude Gradient)')
-    analyze_simulation('./logs/gradient/sim_ampgrad_5e-03/simulation.hdf5', title_suffix='(With Amplitude Gradient)')
+    # analyze_simulation('./logs/gradient/sim_noampgrad_5e-03/simulation.hdf5', title_suffix='(No Amplitude Gradient)')
+    # analyze_simulation('./logs/gradient/sim_ampgrad_5e-03/simulation.hdf5', title_suffix='(With Amplitude Gradient)')
