@@ -7,19 +7,20 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from plot_traj import load_simulation
-from utils import compute_fws, compute_cot, compute_lat_deviation, compute_phase_locking_error, compute_heading_variance, plot_spine_phase_lag
+from utils import compute_fws, compute_cot, compute_lat_deviation, compute_phase_locking_error, compute_heading_variance, plot_spine_phase_lag, get_com
 
 
 def exercise_3_disable_limb_spine_coupling(timestep, log_path = None):
     """ Walk with disabled limb-spine limbs """
     
     try:
-        links, joints, times = load_simulation(log_path)
+        links, joints, times, data = load_simulation(log_path)
     except Exception as e:
         print(f"Failed to load simulation: {e}")
         return
 
-    links_positions   = links[:, :, :3]
+    # links_positions   = links[:, :, :3]
+    links_positions = get_com(data, times)  # directly use CoM trajectory
     joints_torques    = joints[:, :, 2]
     joints_velocities = joints[:, :, 1]
 
@@ -81,11 +82,11 @@ def exercise_3a_coordination(timestep):
             if not os.path.exists(log_path):
                 continue
             try:
-                links, joints, times = load_simulation(log_path)
+                links, joints, times, data = load_simulation(log_path)
             except Exception:
                 continue
 
-            links_positions   = links[:, :, :3]
+            links_positions = get_com(data, times)
             joints_torques    = joints[:, :, 2]
             joints_velocities = joints[:, :, 1]
 
@@ -178,11 +179,11 @@ def exercise_3b_coordination(timestep):
             if not os.path.exists(log_path):
                 continue
             try:
-                links, joints, times = load_simulation(log_path)
+                links, joints, times, data = load_simulation(log_path)
             except Exception:
                 continue
 
-            links_positions   = links[:, :, :3]
+            links_positions = get_com(data, times)
             joints_torques    = joints[:, :, 2]
             joints_velocities = joints[:, :, 1]
 
@@ -254,5 +255,5 @@ if __name__ == '__main__':
     exercise_3_disable_limb_spine_coupling(timestep=5e-3, log_path = './logs/ex3.2_walk/sim_0/simulation.hdf5')
     exercise_3_disable_limb_spine_coupling(timestep=5e-3, log_path = './logs/ex2a_walk/sim_0/simulation.hdf5')
     # exercise_3_limb_spine_antiphase(timestep=5e-3)
-    # exercise_3a_coordination(timestep=5e-3)
-    # exercise_3b_coordination(timestep=5e-3)
+    exercise_3a_coordination(timestep=5e-3)
+    exercise_3b_coordination(timestep=5e-3)
