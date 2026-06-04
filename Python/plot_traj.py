@@ -2,14 +2,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 import h5py
 from utils import compute_fws, LINKS_MASSES, TOTAL_MASS, N_LINKS
-
+from farms_amphibious.data.data import AmphibiousExperimentData
+from utils import get_com
 
 def load_simulation(log_path):
     with h5py.File(log_path, 'r') as f:
         links_array = f['FARMSLISTanimats/0/sensors/links/array'][:]
         joints_array = f['FARMSLISTanimats/0/sensors/joints/array'][:]
         times = f['times'][:]
-    return links_array, joints_array, times
+    exp_data = AmphibiousExperimentData.from_file(log_path)
+    data = exp_data.animats[0]
+    return links_array, joints_array, times, data
 
 def _com_trajectory(links_array):
     """Compute CoM trajectory using link masses."""
@@ -53,7 +56,7 @@ def plot_trajectory(links_array, times, title_suffix=''):
  Position is typically columns 0:3 = [x, y, z]
  link_body_04 is index 4, link_body_05 is index 17 (reordered in HDF5)
  Use index 4 as body center
-"""
+
 
 def plot_trajectory(links_array, times, title_suffix):
     positions = links_array[:, 4, :3]   # shape [3000, 3]
@@ -82,15 +85,46 @@ def plot_trajectory(links_array, times, title_suffix):
     ax.legend()
     ax.grid(True, alpha=0.3)
     return fig
+    """
+    
+"""
+Version 3: trajectory directly using com positions with get_com function, which should be more accurate and better plot
+"""
+def plot_trajectory(com, times, title_suffix):
+    positions = com
+    forward = positions[:, 1]            # Y = forward (spawn at pi/2)
+    lateral = positions[:, 0]            # X = lateral
 
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
-def compute_metrics(links_array, times):
-    com = _com_trajectory(links_array)
+    ax = axes[0]
+    ax.plot(lateral, forward, color='royalblue', linewidth=1.5)
+    ax.plot(lateral[0], forward[0], 'go', markersize=8, label='Start')
+    ax.plot(lateral[-1], forward[-1], 'rs', markersize=8, label='End')
+    ax.set_xlabel('Lateral X [m]')
+    ax.set_ylabel('Forward Y [m]')
+    ax.set_title('Top-Down COM Trajectory')
+    ax.legend()
+    ax.axis('equal')
+    ax.grid(True, alpha=0.3)
+
+    ax = axes[1]
+    ax.plot(times, forward, label='Forward Y', color='royalblue')
+    ax.plot(times, lateral, label='Lateral X', color='tomato')
+    ax.set_xlabel('Time [s]')
+    ax.set_ylabel('Position [m]')
+    ax.set_title('COM Position vs Time')
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    return fig
+
+def compute_metrics(com, times):
+    # com = _com_trajectory(links_array)
     forward = com[:, 1]
     lateral = com[:, 0]
     dur = times[-1] - times[0]
 
-    fwd_speed = compute_fws(links_array[:, :, :3], times)
+    fwd_speed = compute_fws(com, times)
 
     metrics = {
         'forward_displacement': forward[-1] - forward[0],
@@ -138,9 +172,10 @@ def plot_joints(joints_array, times, title_suffix=''):
 
 def analyze_simulation(log_path, title_suffix='', show=True):
     # """Load, plot and print metrics for a single simulation."""
-    links_array, joints_array, times = load_simulation(log_path)
-    metrics = compute_metrics(links_array, times)
-    plot_trajectory(links_array, times, title_suffix=title_suffix)
+    links_array, joints_array, times, data = load_simulation(log_path)
+    com = get_com(data, times)
+    metrics = compute_metrics(com, times)
+    plot_trajectory(com, times, title_suffix=title_suffix)
     plot_joints(joints_array, times, title_suffix=title_suffix)
     if show:
         plt.show()
@@ -152,7 +187,7 @@ if __name__ == '__main__':
     analyze_simulation('./logs/ex2a_walk/sim_0/simulation.hdf5')
     # analyze_simulation('./logs/ex2b_swim/sim_0/simulation.hdf5')
     # analyze_simulation('./logs/ex2b_walk/sim_0/simulation.hdf5')
-    analyze_simulation('./logs/ex3.2_walk/sim_0/simulation.hdf5')
+    # analyze_simulation('./logs/ex3.2_walk/sim_0/simulation.hdf5')
     
     # analyze_simulation('./logs/gradient/sim_noampgrad_5e-03/simulation.hdf5', title_suffix='(No Amplitude Gradient)')
     # analyze_simulation('./logs/gradient/sim_ampgrad_5e-03/simulation.hdf5', title_suffix='(With Amplitude Gradient)')

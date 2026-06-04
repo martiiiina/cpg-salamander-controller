@@ -204,7 +204,7 @@ def main(plot=True):
     # plot_positions(times, head_positions)
     # plt.figure('Trajectory')
     # plot_trajectory(head_positions)
-
+    
     # Show plots
     if plot:
         plt.show()

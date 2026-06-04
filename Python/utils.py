@@ -198,24 +198,26 @@ LINKS_MASSES = np.array([
 TOTAL_MASS = np.sum(LINKS_MASSES)
 N_LINKS = len(LINKS_MASSES)  # 19
 
-def compute_fws(links_positions, times):
+def compute_fws(com, times):
     """
     Compute average forward speed from CoM trajectory.
     Forward axis is Y (index 1).
 
     Parameters
     ----------
-    links_positions : np.ndarray, shape (n_steps, n_links, 3)
-    times           : np.ndarray, shape (n_steps,)
+    com : np.ndarray, shape (n_steps, 3)
+        Centre-of-mass trajectory.
+    times : np.ndarray, shape (n_steps,)
+        Time vector.
 
     Returns
     -------
     fwd_speed : float, [m/s]
     """
-    com = np.sum(
-        links_positions[:, :N_LINKS, :] * LINKS_MASSES[np.newaxis, :, np.newaxis],
-        axis=1
-    ) / TOTAL_MASS  # (n_steps, 3)
+    # com = np.sum(
+    #     links_positions[:, :N_LINKS, :] * LINKS_MASSES[np.newaxis, :, np.newaxis],
+    #     axis=1
+    # ) / TOTAL_MASS  # (n_steps, 3)
 
     dur = times[-1] - times[0]
     fwd_speed = np.abs((com[-1, 1] - com[0, 1]) / dur)
@@ -223,7 +225,7 @@ def compute_fws(links_positions, times):
 
 
 
-def compute_cot(links_positions, joints_torques, joints_velocities, times):
+def compute_cot(com, joints_torques, joints_velocities, times):
     """
     Compute Cost of Transport using positive mechanical power only.
 
@@ -231,7 +233,7 @@ def compute_cot(links_positions, joints_torques, joints_velocities, times):
 
     Parameters
     ----------
-    links_positions    : np.ndarray, shape (n_steps, n_links, 3)
+    com : np.ndarray, shape (n_steps, 3)
     joints_torques     : np.ndarray, shape (n_steps, n_joints)
     joints_velocities  : np.ndarray, shape (n_steps, n_joints)
     times              : np.ndarray, shape (n_steps,)
@@ -248,10 +250,10 @@ def compute_cot(links_positions, joints_torques, joints_velocities, times):
     energy = dt * np.sum(power_positive)
 
     # CoM trajectory
-    com = np.sum(
-        links_positions[:, :N_LINKS, :] * LINKS_MASSES[np.newaxis, :, np.newaxis],
-        axis=1
-    ) / TOTAL_MASS  # (n_steps, 3)
+    # com = np.sum(
+    #     links_positions[:, :N_LINKS, :] * LINKS_MASSES[np.newaxis, :, np.newaxis],
+    #     axis=1
+    # ) / TOTAL_MASS  # (n_steps, 3)
 
     # Integrate total forward distance (Y axis)
     d_fwd = np.sum(np.abs(np.diff(com[:, 1])))
@@ -262,7 +264,7 @@ def compute_cot(links_positions, joints_torques, joints_velocities, times):
     cot = energy / (TOTAL_MASS * 9.81 * d_fwd)
     return energy, cot
 
-def compute_lat_deviation(links_positions, times):
+def compute_lat_deviation(com, times):
     """
     Compute Lateral Path Deviation as the RMS perpendicular distance from the
     ideal straight-line trajectory connecting start and end of steady-state motion.
@@ -272,8 +274,10 @@ def compute_lat_deviation(links_positions, times):
 
     Parameters
     ----------
-    links_positions : np.ndarray, shape (n_steps, n_links, 3)
-    times           : np.ndarray, shape (n_steps,)
+    com : np.ndarray, shape (n_steps, 3)
+        Centre-of-mass trajectory.
+    times : np.ndarray, shape (n_steps,)
+        Time vector.
 
     Returns
     -------
@@ -284,10 +288,10 @@ def compute_lat_deviation(links_positions, times):
     start_idx = N // 5
 
     # Centre-of-mass (CoM) trajectory via mass-weighted link positions
-    com = np.sum(
-        links_positions[:, :N_LINKS, :] * LINKS_MASSES[np.newaxis, :, np.newaxis],
-        axis=1
-    ) / TOTAL_MASS  # (n_steps, 3)
+    # com = np.sum(
+    #     links_positions[:, :N_LINKS, :] * LINKS_MASSES[np.newaxis, :, np.newaxis],
+    #     axis=1
+    # ) / TOTAL_MASS  # (n_steps, 3)
 
     # Steady-state 2D horizontal position: X = lateral (index 0), Y = forward (index 1)
     x = com[start_idx:, 0]
@@ -361,7 +365,7 @@ def compute_phase_locking_error(phi_axial, phi_limb, psi_desired):
     return phase_locking_error_mean, phase_locking_error_rms
 
 
-def compute_heading_variance(links_positions, times):
+def compute_heading_variance(com, times):
     """
     Compute the circular variance of the robot's heading (yaw angle) during
     steady-state locomotion.
@@ -375,8 +379,10 @@ def compute_heading_variance(links_positions, times):
 
     Parameters
     ----------
-    links_positions : np.ndarray, shape (n_steps, n_links, 3)
-    times           : np.ndarray, shape (n_steps,)
+    com : np.ndarray, shape (n_steps, 3)
+        Centre-of-mass trajectory.
+    times : np.ndarray, shape (n_steps,)
+        Time vector.
 
     Returns
     -------
@@ -384,10 +390,10 @@ def compute_heading_variance(links_positions, times):
         0 = perfectly constant heading; values near 1 = highly dispersed heading.
     """
     # --- Centre-of-mass trajectory (same formula as compute_fws) -------------
-    com = np.sum(
-        links_positions[:, :N_LINKS, :] * LINKS_MASSES[np.newaxis, :, np.newaxis],
-        axis=1
-    ) / TOTAL_MASS  # (n_steps, 3)
+    # com = np.sum(
+    #     links_positions[:, :N_LINKS, :] * LINKS_MASSES[np.newaxis, :, np.newaxis],
+    #     axis=1
+    # ) / TOTAL_MASS  # (n_steps, 3)
 
     # --- Instantaneous yaw from CoM velocity direction -----------------------
     # Finite-difference velocity in the horizontal plane (X = lateral, Y = forward).
@@ -469,3 +475,12 @@ def plot_spine_phase_lag(times, joint_angles, joint_velocities, plot = True, ste
         plt.show()
         
     return mean_lag
+
+def get_com(data, times):
+    n_iterations = times.shape[0]
+    com_positions = np.zeros((n_iterations, 3)) #contains the x,y,z position of the COM at each iteration
+    
+    for i in np.arange(n_iterations):
+        com_positions[i,:] = data.sensors.links.global_com_position(i)
+        
+    return com_positions
