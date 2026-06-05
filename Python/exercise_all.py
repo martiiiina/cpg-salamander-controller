@@ -1,4 +1,4 @@
-"""[Project1] Script to call all exercises"""
+"""[Project 2] Script to call all exercises"""
 
 from farms_core import pylog
 

@@ -1,93 +1,104 @@
-# cmc_mp2_group_16_Baroffio_Cerruti_Zhou
+# CMC Mini-Project 2 — Salamander Robot Locomotion
 
-
-
-## Getting started
-
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
-
-```
-cd existing_repo
-git remote add origin https://gitlab.com/martiiiina/cmc_mp2_group_16_baroffio_cerruti_zhou.git
-git branch -M main
-git push -uf origin main
-```
-
-## Integrate with your tools
-
-* [Set up project integrations](https://gitlab.com/martiiiina/cmc_mp2_group_16_baroffio_cerruti_zhou/-/settings/integrations)
-
-## Collaborate with your team
-
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
-
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
+**Group 16**: Baroffio, Cerruti, Zhou — EPFL Neuro-X MSc, Computational Motor Control (2025–2026)
 
 ## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+This project implements and studies a **Central Pattern Generator (CPG)** network for controlling locomotion in a simulated salamander robot. The CPG is a biologically-inspired oscillator network that generates rhythmic motor commands for swimming and walking gaits without sensory feedback.
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+The work is divided into four exercises:
+
+- **Exercise 1** — Implement and analyse the CPG network in isolation (no physics simulation): frequency, phase lag, amplitude gradients, interlimb/intralimb coupling.
+- **Exercise 2** — Couple the CPG to a MuJoCo salamander model and produce swimming and walking behaviours with a ramp drive.
+- **Exercise 3** — Study limb–spine coordination during walking; compare coupled vs. decoupled conditions and sweep key parameters (phase offsets, coupling weights).
+- **Exercise 4** — Extended parameter sweeps and analysis (forward speed, cost of transport, lateral deviation).
+
+The salamander model and simulation framework are provided by the course (`farms_core`, `farms_mujoco`, MuJoCo 3.x).
 
 ## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+
+**Requirements**: Python 3.9 – 3.11, MuJoCo 3.6.
+
+1. Clone the repository:
+
+```bash
+git clone https://gitlab.com/martiiiina/cmc_mp2_group_16_baroffio_cerruti_zhou.git
+cd cmc_mp2_group_16_baroffio_cerruti_zhou
+```
+
+2. Install the course simulation pack (provides `farms_core`, `salamandra_simulation`, etc.):
+
+```bash
+pip install -e cmc_project_pack/
+```
+
+3. Install the remaining Python dependencies:
+
+```bash
+pip install -r Python/project_requirements.txt
+```
 
 ## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+All scripts must be run from the `Python/` directory.
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+```bash
+cd Python
+```
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+**Run a specific exercise:**
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+```bash
+python exercise_all.py 1a          # CPG network analysis (no MuJoCo)
+python exercise_all.py 2a          # Swimming simulation
+python exercise_all.py 2b          # Walking simulation with ramp drive
+python exercise_all.py 3.2         # Walking with disabled limb–spine coupling
+python exercise_all.py 3.3         # Phase offset sweep
+python exercise_all.py 3.4         # Coupling weight sweep
+```
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+**Run all exercises sequentially:**
+
+```bash
+python project2.py
+```
+
+Simulation logs and figures are saved under `Python/logs/<exercise_tag>/`. Pre-computed results for select exercises are also available under `logs/`.
+
+**Key parameters** are exposed through `SimulationParameters` (see [simulation_parameters.py](Python/simulation_parameters.py)):
+
+| Parameter | Description |
+|---|---|
+| `drive` | Central drive to the CPG oscillators |
+| `phase_lag_body` | Phase lag between adjacent body joints |
+| `w_limb_body` | Limb–spine coupling weight |
+| `limb_body_phase_offset` | Phase offset between limbs and spine |
+| `amplitude_gradient` | Per-segment amplitude scaling |
+
+## Project structure
+
+```
+Python/
+├── network.py                  # CPG network (SalamandraNetwork)
+├── robot_parameters.py         # Robot & CPG parameters
+├── simulation_parameters.py    # SimulationParameters dataclass
+├── exercise_p1.py              # Ex 1 — network without MuJoCo
+├── exercise_p2.py              # Ex 2 — swimming & walking
+├── exercise_p3.py              # Ex 3 — limb–spine coordination
+├── exercise_p3_analysis.py     # Ex 3 — plotting only, loads saved logs to produce figures
+├── exercise_p4.py              # Ex 4 — extended sweeps
+├── exercise_p4_analysis.py     # Ex 4 — plotting only, loads saved logs to produce figures
+├── exercise_all.py             # Dispatcher for all exercises
+├── project2.py                 # Main entry point
+├── plot_results.py             # Aggregate plotting
+├── plot_traj.py                # Trajectory visualisation
+└── utils.py                    # Shared metrics (FWS, CoT, etc.)
+```
 
 ## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
 
-## License
-For open source projects, say how it is licensed.
+- **Martina Baroffio** — EPFL Neuro-X MSc
+- **Clotilde Cerruti** — EPFL Neuro-X MSc
+- **Jun Hao Zhou** — EPFL Neuro-X MSc
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+The simulation framework (`farms_core`, `salamandra_simulation`, MuJoCo models) and project specification were provided by the **Computational Motor Control** course at EPFL (Prof. Ijspeert group).

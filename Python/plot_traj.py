@@ -22,73 +22,9 @@ def _com_trajectory(links_array):
         axis=1
     ) / TOTAL_MASS  # (n_steps, 3)
     return com
-
-# FIRST VERSION: trajectory of CoM as in project 1, not good plot
-"""
-def plot_trajectory(links_array, times, title_suffix=''):
-    com = _com_trajectory(links_array)
-    forward = com[:, 1]   # Y = forward
-    lateral = com[:, 0]   # X = lateral
-
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-
-    axes[0].plot(lateral, forward, color='royalblue', linewidth=1.5)
-    axes[0].plot(lateral[0], forward[0], 'go', markersize=8, label='Start')
-    axes[0].plot(lateral[-1], forward[-1], 'rs', markersize=8, label='End')
-    axes[0].set_xlabel('Lateral X [m]')
-    axes[0].set_ylabel('Forward Y [m]')
-    axes[0].set_title(f'Top-Down CoM Trajectory {title_suffix}')
-    axes[0].legend(); axes[0].axis('equal'); axes[0].grid(True, alpha=0.3)
-
-    axes[1].plot(times, forward, label='Forward Y', color='royalblue')
-    axes[1].plot(times, lateral, label='Lateral X', color='tomato')
-    axes[1].set_xlabel('Time [s]')
-    axes[1].set_ylabel('Position [m]')
-    axes[1].set_title(f'CoM Position vs Time {title_suffix}')
-    axes[1].legend(); axes[1].grid(True, alpha=0.3)
-
-    plt.tight_layout()
-    return fig
-"""
-
-# Version 2: trajectory taking link_body_4 as body center
-"""
- Position is typically columns 0:3 = [x, y, z]
- link_body_04 is index 4, link_body_05 is index 17 (reordered in HDF5)
- Use index 4 as body center
-
-
-def plot_trajectory(links_array, times, title_suffix):
-    positions = links_array[:, 4, :3]   # shape [3000, 3]
-    forward = positions[:, 1]            # Y = forward (spawn at pi/2)
-    lateral = positions[:, 0]            # X = lateral
-
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-
-    ax = axes[0]
-    ax.plot(lateral, forward, color='royalblue', linewidth=1.5)
-    ax.plot(lateral[0], forward[0], 'go', markersize=8, label='Start')
-    ax.plot(lateral[-1], forward[-1], 'rs', markersize=8, label='End')
-    ax.set_xlabel('Lateral X [m]')
-    ax.set_ylabel('Forward Y [m]')
-    ax.set_title('Top-Down COM Trajectory')
-    ax.legend()
-    ax.axis('equal')
-    ax.grid(True, alpha=0.3)
-
-    ax = axes[1]
-    ax.plot(times, forward, label='Forward Y', color='royalblue')
-    ax.plot(times, lateral, label='Lateral X', color='tomato')
-    ax.set_xlabel('Time [s]')
-    ax.set_ylabel('Position [m]')
-    ax.set_title('COM Position vs Time')
-    ax.legend()
-    ax.grid(True, alpha=0.3)
-    return fig
-    """
     
 """
-Version 3: trajectory directly using com positions with get_com function, which should be more accurate and better plot
+Trajectory directly using com positions with get_com function, which should be more accurate and better plot
 """
 def plot_trajectory(com, times, title_suffix):
     positions = com

@@ -1,4 +1,4 @@
-"""[Project1] Exercise 2: Swimming & Walking with Salamander Robot"""
+"""[Project 2] Exercise 2: Swimming & Walking with Salamander Robot"""
 
 import os
 import h5py
@@ -8,7 +8,7 @@ from simulation_parameters import SimulationParameters
 
 
 def exercise_walk(timestep):
-    "[Project 1] Q2 Walking with an increasing (ramp) drive"
+    "[Project 2] Q2 Walking with an increasing (ramp) drive"
     # Use exercise_example.py for reference
     sim_parameters = SimulationParameters(
         duration=15,
@@ -34,7 +34,7 @@ def exercise_walk(timestep):
     return
 
 def exercise_ramp_swim(timestep):
-    "[Project 1] Q2 Swimming with an increasing (ramp) drive"
+    "[Project 2] Q2 Swimming with an increasing (ramp) drive"
     # Use exercise_example.py for reference
     # exercise_p2.py
     n_steps = int(40 / timestep)
@@ -65,7 +65,7 @@ def exercise_ramp_swim(timestep):
 
 
 def exercise_ramp_walk(timestep):
-    "[Project 1] Q2 Walking with an increasing (ramp) drive"
+    "[Project 2] Q2 Walking with an increasing (ramp) drive"
     # Use exercise_example.py for reference
     n_steps = int(40 / timestep)
     sim_parameters = SimulationParameters(

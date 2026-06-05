@@ -1,5 +1,5 @@
 import matplotlib
-# matplotlib.use('Agg')  # Use non-interactive backend for faster plotting and headless environments
+matplotlib.use('Agg')  # Use non-interactive backend for faster plotting and headless environments
 
 """Exercise 3: Limb and Spine Coordination while walking"""
 
@@ -50,13 +50,13 @@ def exercise_3_disable_limb_spine_coupling(timestep):
     # Compute forward speed and cost of transport 
     log_path = './logs/ex3.2_walk/sim_0/simulation.hdf5'
     try:
-        links, joints, times, aiuto = load_simulation(log_path)
+        links, joints, times, data = load_simulation(log_path)
     except Exception as e:
         print(f"Failed to load simulation: {e}")
         return
 
     # links_positions   = links[:, :, :3]
-    links_positions = get_com(aiuto, times)  # directly use CoM trajectory
+    links_positions = get_com(data, times)  # directly use CoM trajectory
     joints_torques    = joints[:, :, 2]
     joints_velocities = joints[:, :, 1]
 
@@ -436,7 +436,6 @@ def exercise_3b_coordination(timestep, best_parameters):
 
 if __name__ == '__main__':
     exercise_3_disable_limb_spine_coupling(timestep=5e-3)
-    exercise_3_limb_spine_antiphase(timestep=5e-3)
     best_params = exercise_3a_coordination(timestep=5e-3)
     exercise_3_limb_spine_antiphase(timestep=5e-3, best_parameters=best_params)
     exercise_3b_coordination(timestep=5e-3, best_parameters=best_params)

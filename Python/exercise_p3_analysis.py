@@ -252,7 +252,7 @@ def exercise_3b_coordination(timestep):
 
 
 if __name__ == '__main__':
-    #spinal plots + metric computations for decoupled then coupled + swimming behaviour for the fun
+    #spinal plots + metric computations for decoupled then coupled + swimming behaviour
     exercise_3_disable_limb_spine_coupling(timestep=5e-3, log_path = './logs/ex3.2_walk/sim_0/simulation.hdf5')
     exercise_3_disable_limb_spine_coupling(timestep=5e-3, log_path = './logs/ex2a_walk/sim_0/simulation.hdf5')
     exercise_3_disable_limb_spine_coupling(timestep=5e-3, log_path = './logs/ex2a_swim/sim_0/simulation.hdf5')

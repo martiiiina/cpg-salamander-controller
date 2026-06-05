@@ -38,7 +38,7 @@ class RobotParameters(dict):
         # self.feedback_gains_swim = np.zeros(self.n_oscillators)
         # self.feedback_gains_walk = np.zeros(self.n_oscillators)
 
-        # # gains for final motor output
+        # gains for final motor output
         # self.position_body_gain = parameters.position_body_gain
         # self.position_limb_gain = parameters.position_limb_gain
 
@@ -152,12 +152,9 @@ class RobotParameters(dict):
         else:   
             v_i_limbs = 0
         
-        # NOTE: check if ODEs want frequencies in Hz or rad/s, otherwise multiply by 2pi
         self.freqs[0:16] = 2*np.pi*v_i_body
         self.freqs[16:32] = 2*np.pi*v_i_limbs
         
-        # self.freqs[0:2] = self.freqs[0:2] * (1 + 0.2)
-        # self.freqs[16:24] = self.freqs[16:24] * (1 + 0.1)
 
 
     def set_coupling_weights(self, parameters):
@@ -167,7 +164,7 @@ class RobotParameters(dict):
         the coupling strength between oscillators i and j
         """
         #pylog.error('Coupling weights must be set')
-        # NOTE: updated wrt prof's paper
+        # NOTE: updated according to Ijspeert et al.(2007)
         w_body = 10.0
         w_limb_body = parameters.w_limb_body
         w_limb = 10.0

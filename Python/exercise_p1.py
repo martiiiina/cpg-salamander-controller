@@ -337,7 +337,7 @@ def run_network(duration, update=False, drive=0, timestep=1e-2, decouple=False, 
 
 
 def exercise_1a_networks(plot, timestep=1e-2, amplitude_gradient=None, phase_lag_body=None, drive = 2.5):
-    """[Project 1] Exercise 1: """
+    """[Project 2] Exercise 1: Run CPG network with fixed drive and plot oscillator outputs"""
 
     run_network(
         duration=20, 
@@ -386,11 +386,3 @@ def exercise_1b_networks(plot, timestep=1e-2, amplitude_gradient=None, phase_lag
 if __name__ == '__main__':
     exercise_1a_networks(plot=not save_plots())
     exercise_1b_networks(plot=not save_plots())
-
-    # R_head = 0.25
-    # R_tail = 1
-    # amplitude_gradient = R_head + (R_tail - R_head) * (np.arange(8) / 7) # Linear gradient from head to tail
-    # amplitude_gradient = np.repeat(amplitude_gradient, 2)  # Same gradient for left and right body; limbs have gradient of 1
-    # exercise_1a_networks(plot=not save_plots(), drive = 4)
-    # exercise_1a_networks(plot=not save_plots(), drive = 4, amplitude_gradient=amplitude_gradient)
-
