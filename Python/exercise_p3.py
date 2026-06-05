@@ -1,5 +1,5 @@
 import matplotlib
-matplotlib.use('Agg')  # Use non-interactive backend for faster plotting and headless environments
+#matplotlib.use('Agg')  # Use non-interactive backend for faster plotting and headless environments
 
 """Exercise 3: Limb and Spine Coordination while walking"""
 
