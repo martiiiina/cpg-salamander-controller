@@ -49,7 +49,6 @@ def run_network(duration, update=False, drive=0, timestep=1e-2, decouple=False, 
             limb_body_phase_offset=0,
             body_gain=1,
             limb_gain=1
-            # Feel free to include parameters
         )
     else:
         sim_parameters = SimulationParameters(
@@ -60,7 +59,6 @@ def run_network(duration, update=False, drive=0, timestep=1e-2, decouple=False, 
             limb_body_phase_offset=0,
             body_gain=1,
             limb_gain=1
-            # Feel free to include parameters
         )
     #pylog.warning(
     #    'Modify the scalar drive to be a vector of length n_iterations. By doing so the drive will be modified to be drive[i] at each time step i.')

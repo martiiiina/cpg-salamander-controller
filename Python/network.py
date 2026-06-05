@@ -65,8 +65,6 @@ def network_ode(_time, state, robot_parameters, loads, contact_sens):
     )
     return np.concatenate([dphases, damplitudes])
 
-# NOTE : modified this to include the alpha parameter
-
 def motor_output(phases, amplitudes, iteration, amplitude_gradient=None):
     """Motor output
 

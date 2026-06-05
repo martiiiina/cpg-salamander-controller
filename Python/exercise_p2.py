@@ -18,7 +18,7 @@ def exercise_walk(timestep):
         drive=2.5,          # fixed drive in walking regime
         phase_lag_body=None, # your walking phase lag from ex1
         w_limb_body=150,
-        limb_body_phase_offset=np.pi/4,
+        limb_body_phase_offset=0,
         body_gain=1,
         limb_gain=1
     )
@@ -102,7 +102,7 @@ def exercise_swim(timestep, amplitude_gradient=None):
         spawn_position=[0, 0, 0.1],
         spawn_orientation=[0, 0, np.pi/2],
         drive=4,          # fixed drive in walking regime
-        phase_lag_body=None, # your walking phase lag from ex1
+        phase_lag_body=None, 
         w_limb_body=150,
         limb_body_phase_offset=np.pi/4,
         body_gain=1,
@@ -126,31 +126,6 @@ def exercise_swim(timestep, amplitude_gradient=None):
     )
     return
 
-def exercise_swim(timestep):
-    "Additional simulation for pure swimming behaviour"
-    # Use exercise_example.py for reference
-    sim_parameters = SimulationParameters(
-        duration=15,
-        timestep=timestep,
-        spawn_position=[0, 0, 0.1],
-        spawn_orientation=[0, 0, np.pi/2],
-        drive=4,          # fixed drive in walking regime
-        phase_lag_body=None, # your walking phase lag from ex1
-        w_limb_body=150,
-        limb_body_phase_offset=np.pi/4,
-        body_gain=1,
-        limb_gain=1
-    )
-    os.makedirs('./logs/ex2a_swim/', exist_ok=True)
-    sim, data = simulation(
-        sim_parameters=sim_parameters,
-        arena='water',
-        fast=True,
-        output='logs/ex2a_swim/sim_0',
-        record=True,
-        record_path='logs/ex2a_swim/video_swimming.mp4',
-    )
-    return
 if __name__ == '__main__':
     exercise_walk(timestep=5e-3)
     exercise_ramp_swim(timestep=5e-3)
