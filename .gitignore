@@ -3,3 +3,4 @@ cmc_env/
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
+**/logs/sweep_*
