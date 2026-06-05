@@ -110,9 +110,9 @@ def exercise_3a_coordination(timestep):
     axes[0].set_ylabel('Drive')
     axes[0].set_title('Forward speed')
     best = np.unravel_index(np.nanargmax(fwd_speed), fwd_speed.shape)
-    print(f"Best parameters: drive={drives[best[0]]:.2f}, phase offset={phi_deg[best[1]]:.2f}° with fwd speed={fwd_speed[best]:.3f} m/s and CoT={cot[best]:.3f}")
+    print(f"Best parameters: drive={drives[best[0]]:.2f}, phase offset={phi_deg[best[1]]:.2f}° with fwd speed={fwd_speed[best]:.4f} m/s and CoT={cot[best]:.4f}")
     axes[0].plot(phi_deg[best[1]], drives[best[0]], 'r*', markersize=14,
-                 label=f'Best: {fwd_speed[best]:.3f} m/s\nφ={phi_deg[best[1]]:.0f}°, d={drives[best[0]]:.1f}')
+                 label=f'Best: {fwd_speed[best]:.4f} m/s\nφ={phi_deg[best[1]]:.0f}°, d={drives[best[0]]:.2f}')
     axes[0].legend(fontsize=8)
 
     im1 = axes[1].imshow(
@@ -125,7 +125,7 @@ def exercise_3a_coordination(timestep):
     axes[1].set_title('Cost of Transport (lower = better)')
     best_cot = np.unravel_index(np.nanargmin(cot), cot.shape)
     axes[1].plot(phi_deg[best_cot[1]], drives[best_cot[0]], 'w*', markersize=14,
-                 label=f'Best: {cot[best_cot]:.3f}\nφ={phi_deg[best_cot[1]]:.0f}°, d={drives[best_cot[0]]:.1f}')
+                 label=f'Best: {cot[best_cot]:.3f}\nφ={phi_deg[best_cot[1]]:.0f}°, d={drives[best_cot[0]]:.2f}')
     axes[1].legend(fontsize=8)
 
     fig.suptitle('Exercise 3.3: Limb-body phase offset × Drive sweep', fontsize=14, fontweight='bold')
@@ -135,8 +135,8 @@ def exercise_3a_coordination(timestep):
     colors = plt.cm.cool(np.linspace(0, 1, len(drives)))
 
     for i, d in enumerate(drives):
-        axes2[0].plot(phi_deg, fwd_speed[i], color=colors[i], marker='o', label=f'd={d:.1f}')
-        axes2[1].plot(phi_deg, cot[i],        color=colors[i], marker='o', label=f'd={d:.1f}')
+        axes2[0].plot(phi_deg, fwd_speed[i], color=colors[i], marker='o', label=f'd={d:.2f}')
+        axes2[1].plot(phi_deg, cot[i],        color=colors[i], marker='o', label=f'd={d:.2f}')
 
     for ax, ylabel, title in zip(
         axes2,
@@ -206,7 +206,7 @@ def exercise_3b_coordination(timestep):
     axes[0].set_title('Forward speed')
     best = np.unravel_index(np.nanargmax(fwd_speed), fwd_speed.shape)
     axes[0].plot(limb_gains[best[1]], axial_gains[best[0]], 'r*', markersize=14,
-                 label=f'Best: {fwd_speed[best]:.3f} \nlg={limb_gains[best[1]]:.2f}, bg={axial_gains[best[0]]:.2f}')
+                 label=f'Best: {fwd_speed[best]:.4f} \nlg={limb_gains[best[1]]:.2f}, bg={axial_gains[best[0]]:.2f}')
     axes[0].legend(fontsize=8)
 
     im1 = axes[1].imshow(
@@ -219,7 +219,7 @@ def exercise_3b_coordination(timestep):
     axes[1].set_title('Cost of Transport (lower = better)')
     best_cot = np.unravel_index(np.nanargmin(cot), cot.shape)
     axes[1].plot(limb_gains[best_cot[1]], axial_gains[best_cot[0]], 'w*', markersize=14,
-                 label=f'Best: {cot[best_cot]:.3f}\nlg={limb_gains[best_cot[1]]:.2f}, bg={axial_gains[best_cot[0]]:.2f}')
+                 label=f'Best: {cot[best_cot]:.4f}\nlg={limb_gains[best_cot[1]]:.2f}, bg={axial_gains[best_cot[0]]:.2f}')
     axes[1].legend(fontsize=8)
 
     fig.suptitle('Exercise 3.4: Limb-body limb gain × axial gain', fontsize=14, fontweight='bold')
@@ -252,8 +252,12 @@ def exercise_3b_coordination(timestep):
 
 
 if __name__ == '__main__':
+    #spinal plots + metric computations for decoupled then coupled + swimming behaviour for the fun
     exercise_3_disable_limb_spine_coupling(timestep=5e-3, log_path = './logs/ex3.2_walk/sim_0/simulation.hdf5')
     exercise_3_disable_limb_spine_coupling(timestep=5e-3, log_path = './logs/ex2a_walk/sim_0/simulation.hdf5')
+    exercise_3_disable_limb_spine_coupling(timestep=5e-3, log_path = './logs/ex2a_swim/sim_0/simulation.hdf5')
+    
+    
     # exercise_3_limb_spine_antiphase(timestep=5e-3)
     exercise_3a_coordination(timestep=5e-3)
     exercise_3b_coordination(timestep=5e-3)

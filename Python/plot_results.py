@@ -37,7 +37,7 @@ def load_data(
     return exp_data, parameters
 
 
-def plot_positions(times, link_data):
+def plot_positions(times, link_data, title_suffix=''):
     """Plot positions"""
     for i, data in enumerate(link_data.T):
         plt.plot(times, data, label=['x', 'y', 'z'][i])
@@ -45,6 +45,7 @@ def plot_positions(times, link_data):
     plt.xlabel('Time [s]')
     plt.ylabel('Distance [m]')
     plt.grid(True)
+    plt.title(f'Position of body center vs Time {title_suffix}')
 
 
 def plot_trajectory(link_data, label=None, color=None):
