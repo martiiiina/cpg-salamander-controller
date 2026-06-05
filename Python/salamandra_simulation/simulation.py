@@ -132,7 +132,7 @@ def simulation(
                 "distance": record_distance,
                 "angular_velocity": record_angular_velocity,
                 "offset": record_offset,
-                "resolution": [1280, 720],
+                "resolution": [640, 480],
             },
         })
     if arena != 'land':

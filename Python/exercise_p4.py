@@ -65,7 +65,7 @@ def exercise_4a_transition(timestep):
         drive=5.0,                 # initial swimming drive
         update_drive=True, 
         w_limb_body=150,
-        limb_body_phase_offset=np.pi/4,
+        limb_body_phase_offset=np.deg2rad(66),
         body_gain=1,
         limb_gain=1        
     )
@@ -76,6 +76,7 @@ def exercise_4a_transition(timestep):
         fast=False,
         record=True,
         record_path='logs/ex4_swim2walk/video_swim2walk.mp4',
+        output='logs/ex4_swim2walk/sim_0',
     )
     
     # Transition from walk to swim
@@ -88,7 +89,7 @@ def exercise_4a_transition(timestep):
         drive=2.5,                 # initial walking drive
         update_drive=True, 
         w_limb_body=150,
-        limb_body_phase_offset=np.pi/4,
+        limb_body_phase_offset=np.deg2rad(66),
         body_gain=1,
         limb_gain=1        
     )
@@ -99,6 +100,7 @@ def exercise_4a_transition(timestep):
         fast=False,
         record=True,
         record_path='logs/ex4_walk2swim/video_walk2swim.mp4',
+        output='logs/ex4_walk2swim/sim_0',
     )
 
     return 
