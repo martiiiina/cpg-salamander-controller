@@ -48,13 +48,13 @@ class SalamandraController(AmphibiousController):
         self.animat_data.state.array[index,
                                      :] = self.network.state.array[index, :]
 
-        # Limb offsets
+        # Limb offsets: ACTIVE FOLDING OF LIMBS DURING SWIMMING
         joints_offsets_index = 4*16+8
         d = self.network.robot_parameters.sim_parameters.drive
 
         if np.asarray(d).flat[0] > 3.0:
             # Swimming: fold limbs back
-            self.animat_data.state.array[index, joints_offsets_index::2] = -0.5*np.pi      # forelimbs back ✓
+            self.animat_data.state.array[index, joints_offsets_index::2] = -0.5*np.pi      # forelimbs back 
             self.animat_data.state.array[index, joints_offsets_index+4::2] = -0.5*np.pi    # hindlimbs: flip sign
         else:
             # Walking

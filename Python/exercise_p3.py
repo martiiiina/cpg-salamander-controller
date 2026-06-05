@@ -66,7 +66,7 @@ def exercise_3_disable_limb_spine_coupling(timestep):
     print(f"Forward speed: {fws}")
     print(f"Cost of Transport (CoT): {cot}")
     
-    # Stability metrics could be added here (e.g., variance of CoM, foot clearance, etc.)
+    # Stability metrics
 
     lat_deviation = compute_lat_deviation(links_positions, times)
 
@@ -96,7 +96,7 @@ def exercise_3_disable_limb_spine_coupling(timestep):
 def exercise_3_limb_spine_antiphase(timestep, best_parameters):
     """ Walk with limb-spine in anti-phase """
     # Use exercise_example.py for reference
-        # Simulation in antiphase
+    # Simulation in antiphase
     drive, phi_deg = best_parameters
     sim_parameters = SimulationParameters(
         duration=15,
@@ -436,6 +436,7 @@ def exercise_3b_coordination(timestep, best_parameters):
 
 if __name__ == '__main__':
     exercise_3_disable_limb_spine_coupling(timestep=5e-3)
+    exercise_3_limb_spine_antiphase(timestep=5e-3)
     best_params = exercise_3a_coordination(timestep=5e-3)
     exercise_3_limb_spine_antiphase(timestep=5e-3, best_parameters=best_params)
     exercise_3b_coordination(timestep=5e-3, best_parameters=best_params)
