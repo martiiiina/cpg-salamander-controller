@@ -1,4 +1,4 @@
-# CMC Project 2 — Salamander Robot Locomotion
+# CMC Project 2 - Salamander Robot Locomotion
 
 ## Description
 
@@ -8,10 +8,10 @@ For more information on CPG theory, see the [reference paper](Report/science.113
 
 The work is divided into four exercises:
 
-- **Exercise 1** — Implement and analyse the CPG network in isolation (no physics simulation): frequency, phase lag, amplitude gradients, interlimb/intralimb coupling.
-- **Exercise 2** — Couple the CPG to a MuJoCo salamander model and produce swimming and walking behaviours with a ramp drive.
-- **Exercise 3** — Study limb–spine coordination during walking; compare coupled vs. decoupled conditions and sweep key parameters (phase offsets, coupling weights).
-- **Exercise 4** — Extended parameter sweeps and analysis (forward speed, cost of transport, lateral deviation).
+- **Exercise 1**: Implement and analyse the CPG network in isolation (no physics simulation): frequency, phase lag, amplitude gradients, interlimb/intralimb coupling.
+- **Exercise 2**: Couple the CPG to a MuJoCo salamander model and produce swimming and walking behaviours with a ramp drive.
+- **Exercise 3**: Study limb–spine coordination during walking; compare coupled vs. decoupled conditions and sweep key parameters (phase offsets, coupling weights).
+- **Exercise 4**: Extended parameter sweeps and analysis (forward speed, cost of transport, lateral deviation).
 
 
 ## Installation
