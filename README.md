@@ -1,10 +1,10 @@
-# CMC Mini-Project 2 — Salamander Robot Locomotion
-
-**Group 16**: Baroffio, Cerruti, Zhou — EPFL Neuro-X MSc, Computational Motor Control (2025–2026)
+# CMC Project 2 — Salamander Robot Locomotion
 
 ## Description
 
-This project implements and studies a **Central Pattern Generator (CPG)** network for controlling locomotion in a simulated salamander robot. The CPG is a biologically-inspired oscillator network that generates rhythmic motor commands for swimming and walking gaits without sensory feedback.
+This project implements and studies a **Central Pattern Generator (CPG)** network for controlling locomotion in a simulated salamander robot (Polymander). The CPG is a biologically-inspired oscillator network that generates rhythmic motor commands for swimming and walking gaits without sensory feedback.
+
+For more information on CPG theory, see the [reference paper](Report/science.1138353.pdf). This project was part of the **Computational Motor Control (CMC)** course at EPFL.
 
 The work is divided into four exercises:
 
@@ -13,24 +13,18 @@ The work is divided into four exercises:
 - **Exercise 3** — Study limb–spine coordination during walking; compare coupled vs. decoupled conditions and sweep key parameters (phase offsets, coupling weights).
 - **Exercise 4** — Extended parameter sweeps and analysis (forward speed, cost of transport, lateral deviation).
 
-The salamander model and simulation framework are provided by the course (`farms_core`, `farms_mujoco`, MuJoCo 3.x).
 
 ## Installation
-
-**Requirements**: Python 3.9 – 3.11, MuJoCo 3.6.
 
 1. Clone the repository:
 
 ```bash
-git clone https://gitlab.com/martiiiina/cmc_mp2_group_16_baroffio_cerruti_zhou.git
-cd cmc_mp2_group_16_baroffio_cerruti_zhou
+git clone https://github.com/martiiiina/cpg-salamander-controller.git
+cd cpg-salamander-controller
 ```
 
-2. Install the course simulation pack (provides `farms_core`, `salamandra_simulation`, etc.):
+2. Install the course simulation pack. The simulation framework (`farms_core`, `salamandra_simulation`, MuJoCo models) and project specification were provided by the **Computational Motor Control** course at EPFL (Prof. Ijspeert group). For installation instructions, see the [project installation guide](https://gitlab.com/farmsim/courses/cmc-2026-students/-/tree/main/project_installation?ref_type=heads).
 
-```bash
-pip install -e cmc_project_pack/
-```
 
 3. Install the remaining Python dependencies:
 
@@ -65,15 +59,6 @@ python project2.py
 
 Simulation logs and figures are saved under `Python/logs/<exercise_tag>/`. Pre-computed results for select exercises are also available under `logs/`.
 
-**Key parameters** are exposed through `SimulationParameters` (see [simulation_parameters.py](Python/simulation_parameters.py)):
-
-| Parameter | Description |
-|---|---|
-| `drive` | Central drive to the CPG oscillators |
-| `phase_lag_body` | Phase lag between adjacent body joints |
-| `w_limb_body` | Limb–spine coupling weight |
-| `limb_body_phase_offset` | Phase offset between limbs and spine |
-| `amplitude_gradient` | Per-segment amplitude scaling |
 
 ## Project structure
 
@@ -95,10 +80,13 @@ Python/
 └── utils.py                    # Shared metrics (FWS, CoT, etc.)
 ```
 
+## Report
+
+For a detailed analysis of the results and findings from this project, see the [project report](Report/Report.pdf).
+
 ## Authors and acknowledgment
 
 - **Martina Baroffio** — EPFL Neuro-X MSc
 - **Clotilde Cerruti** — EPFL Neuro-X MSc
 - **Jun Hao Zhou** — EPFL Neuro-X MSc
 
-The simulation framework (`farms_core`, `salamandra_simulation`, MuJoCo models) and project specification were provided by the **Computational Motor Control** course at EPFL (Prof. Ijspeert group).
