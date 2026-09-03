@@ -82,7 +82,7 @@ Python/
 
 ## Report
 
-For a detailed analysis of the results and findings from this project, see the [project report](Report/Report.pdf).
+For a detailed analysis of the results and findings from this project, see the [project report](https://raw.githubusercontent.com/martiiiina/cpg-salamander-controller/main/Report/Report.pdf).
 
 ## Authors and acknowledgment
 
